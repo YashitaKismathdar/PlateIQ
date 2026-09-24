@@ -1,3 +1,4 @@
-import { demoOrders } from './types'
+import { demoOrders, type DemoState } from './types'
 export function getDemoOrders(step:number){return demoOrders[Math.min(demoOrders.length-1,Math.max(0,step))]}
-export function getDemoMetrics(step:number){const orders=getDemoOrders(step);const baseline=8;const ordersPerMinute=Number((orders/12).toFixed(1));const projectedDemand=Math.round(orders*1.28+34);const forecast=Math.round(projectedDemand*.94);const prepared=Math.min(1010,Math.round(930+step*10));const kitchenCapacity=Math.min(98,Math.round(72+step*2.4));const status=ordersPerMinute>baseline*1.45?'Surge':ordersPerMinute>baseline*1.15?'Adjusting':'Monitoring';return {orders,ordersPerMinute,projectedDemand,forecast,prepared,kitchenCapacity,status}}
+export function isDemandSurge(ordersPerMinute:number,baselineVelocity:number){return ordersPerMinute>baselineVelocity*1.45}
+export function getDemoMetrics(step:number,baselineVelocity=8){const orders=getDemoOrders(step);const ordersPerMinute=Number((orders/6).toFixed(1));const kitchenCapacity=Math.min(98,Math.round(72+step*2.4));const status=(isDemandSurge(ordersPerMinute,baselineVelocity)?'Surge':ordersPerMinute>baselineVelocity*1.15?'Adjusting':'Monitoring') as DemoState['status'];return {orders,ordersPerMinute,kitchenCapacity,status}}

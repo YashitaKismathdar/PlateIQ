@@ -1,4 +1,0 @@
-import type { Dish, WasteRecord } from './types'
-import { calculateWaste } from './calculations'
-export function recalculateWaste(records:WasteRecord[], dishes:Dish[], preparedOverride?:number){return records.map(record=>{const dish=dishes.find(item=>item.id===record.dishId);if(!dish)return record;const prepared=record.dishId==='biryani'&&preparedOverride!==undefined?preparedOverride:record.prepared;const next=calculateWaste(prepared,record.consumed,record.spoilageKg);return {...record,prepared,overproductionKg:next.overproduction,wasteKg:next.wasteKg,wasteCost:next.wasteCost}})}
-export function wasteSummary(records:WasteRecord[]){return records.reduce((sum,record)=>({wasteKg:Number((sum.wasteKg+record.wasteKg).toFixed(1)),wasteCost:sum.wasteCost+record.wasteCost}),{wasteKg:0,wasteCost:0})}
