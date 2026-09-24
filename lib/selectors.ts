@@ -3,6 +3,8 @@ import { buildForecast } from './forecasting'
 import { calculateWaste } from './calculations'
 import { deriveInventoryState, ingredientRequirements } from './inventory-engine'
 import { wasteSummary } from './waste-engine'
+import { calculateWasteRisk } from './waste-risk-engine'
+import { explainForecast } from './forecasting'
 
 const batchStatuses: BatchStatus[] = ['Recommended', 'In Preparation', 'Ready', 'Completed']
 
@@ -35,11 +37,39 @@ export function getLiveOperationsMetrics(state: PlateIQState) {
   return { orders: state.demo.orders, ordersPerMinute: state.demo.ordersPerMinute, projectedDemand: forecast?.projectedDemand ?? 0, capacity: getKitchenMetrics(state).capacity, surge: state.demo.status === 'Surge' }
 }
 
-export function getCopilotContext(state: PlateIQState, dishId = 'biryani') {
+export function getBatchImpact(state: PlateIQState, dishId: string, quantity: number) {
+  const dish = state.dishes.find(item => item.id === dishId)
+  if (!dish) return { dish: undefined, quantity, requirements: {}, shortages: [], maxFeasibleQuantity: 0, ready: false }
+  const requirements = ingredientRequirements(dish, quantity)
+  const inventoryById = new Map(state.inventory.map(item => [item.id, item]))
+  const shortages = Object.entries(requirements).flatMap(([ingredientId, required]) => {
+    const item = inventoryById.get(ingredientId)
+    return !item || item.currentStock < required ? [{ ingredientId, name: item?.name ?? ingredientId, required, available: item?.currentStock ?? 0 }] : []
+  })
+  const capacityRatios = Object.entries(dish.ingredients).map(([ingredientId]) => {
+    const item = inventoryById.get(ingredientId)
+    return item ? item.currentStock / Math.max(dish.ingredients[ingredientId], 0.0001) : 0
+  })
+  const maxFeasibleQuantity = capacityRatios.length ? Math.max(0, Math.floor(Math.min(...capacityRatios)) * dish.batchSize) : 0
+  return { dish, quantity, requirements, shortages, maxFeasibleQuantity, ready: shortages.length === 0 }
+}
+
+export function getDishOperationalContext(state: PlateIQState, dishId = 'biryani') {
   const dish = state.dishes.find(item => item.id === dishId) ?? state.dishes[0]
-  const forecast = dish ? getForecastMetrics(state, dish.id) : null
-  const nextBatch = dish ? state.batches.find(batch => batch.dishId === dish.id && (batch.status === 'Recommended' || batch.status === 'In Preparation')) : undefined
-  return { dish, forecast, nextBatch, prepared: dish?.prepared ?? 0, orders: state.demo.orders, inventory: state.inventory, waste: wasteSummary(state.waste), scenario: state.scenario, surge: state.demo.status === 'Surge' }
+  if (!dish) return null
+  const forecast = getForecastMetrics(state, dish.id)
+  const batch = state.batches.find(item => item.dishId === dish.id && item.status === 'Recommended') ?? state.batches.find(item => item.dishId === dish.id)
+  const requestedQuantity = forecast?.recommendedPreparation ?? batch?.quantity ?? 0
+  const batchImpact = getBatchImpact(state, dish.id, requestedQuantity)
+  const recommendedQuantity = Math.min(requestedQuantity, batchImpact.maxFeasibleQuantity)
+  const risk = forecast ? calculateWasteRisk({ ...forecast, prepared: dish.prepared, preparationQuantity: requestedQuantity, leadTimeMinutes: dish.leadTimeMinutes, batchSize: dish.batchSize, ingredients: dish.ingredients }, state.inventory, state.waste) : null
+  return { dish, forecast, batch, batchImpact, recommendedQuantity, risk, factors: explainForecast(state.scenario, state.demo.ordersPerMinute) }
+}
+
+export function getCopilotContext(state: PlateIQState, dishId = 'biryani') {
+  const context = getDishOperationalContext(state, dishId) ?? { dish: undefined, forecast: null, batch: undefined, batchImpact: { quantity: 0, requirements: {}, shortages: [], maxFeasibleQuantity: 0, ready: false }, recommendedQuantity: 0, risk: null, factors: [] }
+  const nextBatch = context?.batch?.status === 'Recommended' || context?.batch?.status === 'In Preparation' ? context.batch : undefined
+  return { ...context, nextBatch, prepared: context.dish?.prepared ?? 0, orders: state.demo.orders, inventory: state.inventory, waste: wasteSummary(state.waste), scenario: state.scenario, surge: state.demo.status === 'Surge' }
 }
 
 export function getAnalyticsMetrics(state: PlateIQState) {
@@ -125,6 +155,11 @@ export function simulateScenario(state: PlateIQState, scenario: PlateIQState['sc
     ingredientRequirements,
     projectedInventory,
     stockoutRisk,
+    wasteRisk: forecastByDish.reduce((highest, item) => {
+      const risk = calculateWasteRisk({ ...item.forecast, actual: item.dish.actualOrders, prepared: item.dish.prepared, preparationQuantity: item.forecast.recommendedPreparation, leadTimeMinutes: item.dish.leadTimeMinutes, batchSize: item.dish.batchSize, ingredients: item.dish.ingredients }, state.inventory, state.waste)
+      return risk.score > highest.score ? risk : highest
+    }, calculateWasteRisk({ ...forecastByDish[0].forecast, actual: forecastByDish[0].dish.actualOrders, prepared: forecastByDish[0].dish.prepared, preparationQuantity: forecastByDish[0].forecast.recommendedPreparation, leadTimeMinutes: forecastByDish[0].dish.leadTimeMinutes, batchSize: forecastByDish[0].dish.batchSize, ingredients: forecastByDish[0].dish.ingredients }, state.inventory, state.waste)),
+    ingredientPressure: projectedInventory.filter(item => item.remaining < 0).map(item => item.name),
     projectedWasteKg: Number(projectedWaste.wasteKg.toFixed(1)),
     projectedWasteCost: projectedWaste.wasteCost,
     forecastByDish,
