@@ -275,7 +275,7 @@ export function usePlateIQ() {
   return value
 }
 
-export const navItems = [['Overview', '/app'], ['Live Operations', '/app/live-operations'], ['Kitchen Planner', '/app/kitchen-planner'], ['Demand Forecast', '/app/demand-forecast'], ['Inventory', '/app/inventory'], ['Waste Intelligence', '/app/waste-intelligence'], ['What-If Simulator', '/app/what-if'], ['Analytics', '/app/analytics'], ['AI Copilot', '/app/copilot']] as const
+export const navItems = [['Overview', '/app'], ['Live Operations', '/app/live-operations'], ['Tasks', '/app/kitchen-planner'], ['Forecasting', '/app/demand-forecast'], ['Inventory', '/app/inventory'], ['Waste Management', '/app/waste-intelligence'], ['External Factors', '/app/what-if'], ['AI Copilot', '/app/copilot'], ['Insights', '/app/analytics'], ['Settings', '/app/settings']] as const
 
 export function usePlateIQMetrics() {
   const { state } = usePlateIQ()
