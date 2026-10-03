@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import './premium-polish.css'
+import './culinary-intelligence.css'
 import { PlateIQProvider } from '@/components/plateiq-state'
 
 export const metadata: Metadata = {
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#f6f7f2',
+  themeColor: '#fdfbf7',
 }
 
 export default function RootLayout({
