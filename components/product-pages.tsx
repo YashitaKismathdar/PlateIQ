@@ -83,3 +83,49 @@ export function Overview(){
 }
 
 export function ProductPage({kind}:{kind:string}){const titles:Record<string,[string,string]>={'live-operations':['Live operations','A clear view of what is happening across the kitchen right now.'],'kitchen-planner':['Kitchen planner','Prepare progressively, with the next decision always visible.'],'demand-forecast':['Demand forecast','Probabilistic forecasts that improve as orders arrive.'],'inventory':['Inventory intelligence','Know what is running low before service is disrupted.'],'waste-intelligence':['Waste intelligence','Turn every avoided plate into measurable savings.'],'analytics':['Culinary insights','See how operational decisions compound over time.'],'what-if':['External factors','Understand how weather, local events, and demand shifts may affect service.'],'copilot':['Ask PlateIQ','Your AI kitchen operations assistant.']};const [title,subtitle]=titles[kind]||titles.analytics;const [change,setChange]=useState(0);const {state}=usePlateIQ();const metrics=getRestaurantMetrics(state);const kitchen=getKitchenMetrics(state);const waste=wasteSummary(state.waste);return <div className="page-body"><Header title={title} subtitle={subtitle}/><DemoBanner/>{kind==='what-if'?<Simulator change={change} setChange={setChange}/>:kind==='copilot'?<Copilot/>:<><div className="metrics-grid"><Metric label="Forecast accuracy" value={`${metrics.forecastAccuracy.toFixed(1)}%`} detail="current confidence" trend="Derived"/><Metric label="Projected demand" value={metrics.projectedDemand.toLocaleString('en-IN')} detail="shared forecast" trend="Live"/><Metric label="Kitchen capacity" value={`${kitchen.capacity}%`} detail="station average" trend="Derived"/><Metric label="Food waste" value={`${metrics.wasteKg.toFixed(1)} kg`} detail="waste records" trend="Tracked"/><Metric label="Food cost savings" value={waste.potentialSavings===null?'—':`₹${waste.potentialSavings.toLocaleString('en-IN')}`} detail={waste.potentialSavings===null?'Baseline unavailable':'Derived' } trend="State"/></div><div className="dashboard-grid"><Chart title={kind==='live-operations'?'Live order velocity':'Forecast vs actual'}/><section className="panel"><div className="section-kicker"><Sparkles/> AI insight</div><h2>Make the next preparation decision with confidence.</h2><p className="muted-copy">Live state, forecast confidence, inventory, and kitchen capacity are available through the shared operational model.</p></section></div></>}</div>}
+
+
+function Simulator({change,setChange}:{change:number;setChange:(value:number)=>void}) {
+  const {state,dispatch}=usePlateIQ();
+  const result=simulateScenario(state,{...state.scenario,customerChange:change});
+  return <section className="panel data-panel">
+    <div className="section-kicker"><Activity/> Scenario simulator</div>
+    <h2>Model a change in customer demand</h2>
+    <p className="muted-copy">Adjust expected customer demand and review the projected kitchen impact before applying a plan.</p>
+    <label className="scenario-control">Customer demand change <strong>{change>0?'+':''}{change}%</strong><input type="range" min="-30" max="60" step="5" value={change} onChange={event=>setChange(Number(event.target.value))}/></label>
+    <div className="metrics-grid">
+      <Metric label="Projected demand" value={result.projectedDemand.toLocaleString('en-IN')} detail="plates across menu" trend="Scenario"/>
+      <Metric label="Recommended prep" value={result.recommendedPreparation.toLocaleString('en-IN')} detail="additional plates" trend="Scenario"/>
+      <Metric label="Stockout risk" value={result.stockoutRisk} detail="projected inventory" trend="Scenario"/>
+      <Metric label="Projected waste" value={result.projectedWasteKg.toFixed(1)+" kg"} detail={`₹${Math.round(result.projectedWasteCost).toLocaleString('en-IN')} estimated cost`} trend="Scenario"/>
+    </div>
+    <div className="setting-row"><strong>AI explanation</strong><span>{result.explanation}</span></div>
+    {result.ingredientPressure.length>0&&<div className="setting-row"><strong>Ingredients under pressure</strong><span>{result.ingredientPressure.join(', ')}</span></div>}
+    <div className="heading-actions"><button className="outline-button" onClick={()=>{setChange(0);dispatch({type:'reset-scenario'})}}>Reset scenario</button><button className="primary-button" onClick={()=>{dispatch({type:'scenario',scenario:{customerChange:change}});dispatch({type:'apply-plan'})}}>Apply preparation plan <ArrowRight/></button></div>
+  </section>
+}
+
+function Copilot() {
+  const {state,dispatch}=usePlateIQ();
+  const context=getCopilotContext(state);
+  return <div className="dashboard-grid">
+    <section className="panel">
+      <div className="section-kicker"><Sparkles/> PlateIQ Copilot</div>
+      <h2>Kitchen intelligence, grounded in live operational data.</h2>
+      <p className="muted-copy">Recommendations update from demand forecasts, prep batches, inventory availability, and waste records.</p>
+      <div className="setting-row"><span>Current orders</span><strong>{context.orders.toLocaleString('en-IN')}</strong></div>
+      <div className="setting-row"><span>Projected demand</span><strong>{context.forecast?.projectedDemand??0} plates</strong></div>
+      <div className="setting-row"><span>Forecast confidence</span><strong>{context.forecast?.confidence??0}%</strong></div>
+      <div className="setting-row"><span>Recommended preparation</span><strong>{context.recommendedQuantity} plates</strong></div>
+      <div className="setting-row"><span>Waste recorded</span><strong>{context.waste.wasteKg.toFixed(1)} kg</strong></div>
+      <div className="setting-row"><span>Scenario</span><strong>{context.surge?'Demand surge':state.demo.status}</strong></div>
+      <div className="heading-actions"><button className="outline-button" onClick={()=>dispatch({type:'reset'})}><RotateCcw/> Reset demo</button><button className="primary-button" onClick={()=>dispatch({type:'toggle'})}>{state.demo.running?'Pause demo':'Run scenario'} <Play/></button></div>
+    </section>
+    <section className="panel">
+      <div className="section-kicker"><Zap/> Recommended next actions</div>
+      {state.recommendations.length?state.recommendations.map(item=><article className="setting-row" key={item.id}><div><strong>{item.title}</strong><p className="muted-copy">{item.description}</p><small>{item.confidence}% confidence</small></div>{item.dishId&&state.batches.find(batch=>batch.dishId===item.dishId&&batch.status!=='Completed')&&<button className="text-button" onClick={()=>dispatch({type:'batch',batchId:state.batches.find(batch=>batch.dishId===item.dishId&&batch.status!=='Completed')!.id})}>{item.actionLabel??'Advance batch'}</button>}</article>):<p className="muted-copy">No active recommendations. Keep monitoring demand and stock levels.</p>}
+      <div className="section-kicker"><Activity/> Recent operational events</div>
+      {state.events.slice(0,5).map(event=><div className="setting-row" key={event.id}><div><strong>{event.title}</strong><p className="muted-copy">{event.description}</p></div><small>{event.timestamp}</small></div>)}
+    </section>
+  </div>
+}
