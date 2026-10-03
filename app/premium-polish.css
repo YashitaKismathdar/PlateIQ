@@ -173,3 +173,48 @@ input, select { accent-color: var(--emerald); }
 @media (prefers-reduced-motion:reduce) {
   .insight-secondary { transition:none; }
 }
+
+
+/* Navigation usability: keep the app sidebar within the viewport and let its
+   contents scroll independently when the menu is taller than the screen. */
+.app-shell > .sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c7d5c8 transparent;
+}
+.app-shell > .sidebar nav {
+  flex: 0 0 auto;
+}
+.app-shell > .sidebar .sidebar-bottom {
+  flex: 0 0 auto;
+}
+.app-shell > .sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.app-shell > .sidebar::-webkit-scrollbar-thumb {
+  background: #c7d5c8;
+  border-radius: 999px;
+}
+.app-shell > .sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+@media (max-width: 760px) {
+  .app-shell > .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
