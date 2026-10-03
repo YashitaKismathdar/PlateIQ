@@ -50,7 +50,7 @@ export function Overview(){const {state,dispatch}=usePlateIQ();const [showWhy,se
   <div><span>Inventory attention</span><strong>{state.inventory.filter(item=>item.status!=='Healthy').length} items</strong></div>
   <div><span>Waste baseline</span><strong>{waste.wasteReductionPct===null?'Not set':'Available'}</strong></div>
 </div>
-<div className="insight-actions"><Link href={context?.nextBatch?'/app/kitchen-planner':'/app/demand-forecast'} className="primary-button">{context?.nextBatch?'Review next batch':'Review forecast'} <ArrowUpRight/></Link><Link href="/app/copilot" className="insight-secondary">Ask PlateIQ <ArrowRight/></Link></div></>}</section></div>
+<div className="insight-actions"><Link href={context?.batch?'/app/kitchen-planner':'/app/demand-forecast'} className="primary-button">{context?.batch?'Review next batch':'Review forecast'} <ArrowUpRight/></Link><Link href="/app/copilot" className="insight-secondary">Ask PlateIQ <ArrowRight/></Link></div></>}</section></div>
 <section className="decision-strip panel">
   <div className="decision-intro">
     <span className="decision-icon"><Sparkles /></span>
