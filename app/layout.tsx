@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import './premium-polish.css'
 import './culinary-intelligence.css'
+import './stitch-screen-adaptation.css'
 import { PlateIQProvider } from '@/components/plateiq-state'
 
 export const metadata: Metadata = {
