@@ -15,16 +15,16 @@ function Chart({title='Live demand monitor'}:{title?:string}) {
   const {state}=usePlateIQ();
   const forecast=getForecastMetrics(state);
   const data=[
-    {time:'Baseline',actual:null,forecast:forecast?.baseline??0,rangeBase:0,rangeSize:0},
-    {time:'Current',actual:state.demo.orders,forecast:null,rangeBase:0,rangeSize:0},
-    {time:'Forecast',actual:null,forecast:forecast?.forecast??0,rangeBase:forecast?.lowerBound??0,rangeSize:Math.max(0,(forecast?.upperBound??0)-(forecast?.lowerBound??0))},
+    {time:'Baseline',actual:null,forecast:forecast?.baseline??0},
+    {time:'Current',actual:state.demo.orders,forecast:null},
+    {time:'Forecast',actual:null,forecast:forecast?.forecast??0},
   ];
   return <section className="panel demand-panel refined-demand-panel">
     <div className="panel-heading">
       <div><div className="section-kicker"><Activity/> {title}</div><h2>Demand at a glance</h2><p className="chart-subtitle">Compare the baseline, current orders, and projected demand.</p></div>
       <span className="chart-live-badge"><i/> {state.demo.running?'Updating live':'Demo snapshot'}</span>
     </div>
-    <div className="chart-legend"><span><i className="legend-line actual"/>Current orders</span><span><i className="legend-line forecast"/>Forecast</span><span><i className="legend-range-dot"/>Forecast range</div>
+    <div className="chart-legend"><span><i className="legend-line actual"/>Current orders</span><span><i className="legend-line forecast"/>Forecast</span><span><i className="legend-range-dot"/>Forecast range</span></div>
     <div className="chart-wrap refined-chart-wrap"><ResponsiveContainer width="100%" height={260}>
       <LineChart data={data} margin={{top:12,right:8,left:-16,bottom:0}}>
         <CartesianGrid vertical={false} stroke="#E7EBE5" strokeDasharray="3 5"/>
