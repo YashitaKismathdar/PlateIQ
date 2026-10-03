@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Activity, ArrowRight, ArrowUpRight, Boxes, Check, CircleHelp, CloudRain, Play, RotateCcw, Sparkles, Zap } from 'lucide-react'
-import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { usePlateIQ } from './plateiq-state'
 import { getCopilotContext, getDishOperationalContext, getForecastMetrics, getKitchenMetrics, getRestaurantMetrics } from '@/lib/selectors'
 import { simulateScenario } from '@/lib/selectors'
@@ -24,22 +24,20 @@ function Chart({title='Live demand monitor'}:{title?:string}) {
       <div><div className="section-kicker"><Activity/> {title}</div><h2>Demand at a glance</h2><p className="chart-subtitle">Compare the baseline, current orders, and projected demand.</p></div>
       <span className="chart-live-badge"><i/> {state.demo.running?'Updating live':'Demo snapshot'}</span>
     </div>
-    <div className="chart-legend"><span><i className="legend-line actual"/>Current orders</span><span><i className="legend-line forecast"/>Forecast</span><span><i className="legend-band"/>Forecast range</span></div>
+    <div className="chart-legend"><span><i className="legend-line actual"/>Current orders</span><span><i className="legend-line forecast"/>Forecast</span><span><i className="legend-range-dot"/>Forecast range</div>
     <div className="chart-wrap refined-chart-wrap"><ResponsiveContainer width="100%" height={260}>
-      <AreaChart data={data} margin={{top:12,right:8,left:-16,bottom:0}}>
+      <LineChart data={data} margin={{top:12,right:8,left:-16,bottom:0}}>
         <CartesianGrid vertical={false} stroke="#E7EBE5" strokeDasharray="3 5"/>
         <XAxis dataKey="time" tickLine={false} axisLine={false} tick={{fill:'#78867B',fontSize:11}} tickMargin={10}/>
         <YAxis tickLine={false} axisLine={false} tick={{fill:'#78867B',fontSize:11}} width={42}/>
         <Tooltip contentStyle={{border:'1px solid #e2e8df',borderRadius:12,boxShadow:'0 10px 30px rgba(25,48,30,.09)',fontSize:12}} formatter={(value,name)=>[typeof value==='number'?value.toLocaleString('en-IN')+' plates':value,name==='actual'?'Current orders':name==='forecast'?'Forecast':name==='rangeSize'?'Forecast range':name]}/>
-        <Area dataKey="rangeBase" stackId="range" stroke="none" fill="transparent" legendType="none" tooltipType="none"/>
-        <Area dataKey="rangeSize" stackId="range" stroke="none" fill="#F8E5BF" fillOpacity={0.82} legendType="none" name="Forecast range" activeDot={false}/>
         <Line dataKey="forecast" stroke="#D8942F" strokeWidth={2.5} strokeDasharray="6 5" dot={{r:4,fill:'#D8942F',stroke:'#fff',strokeWidth:2}} activeDot={{r:6}} connectNulls/>
         <Line dataKey="actual" stroke="#16834B" strokeWidth={3} dot={{r:5,fill:'#16834B',stroke:'#fff',strokeWidth:2}} activeDot={{r:7}} connectNulls={false}/>
-      </AreaChart>
+      </LineChart>
     </ResponsiveContainer></div>
     <div className="chart-summary-row">
       <div><span>Current orders</span><strong>{state.demo.orders.toLocaleString('en-IN')} <small>plates</small></strong></div>
-      <div><span>Forecast</span><strong>{(forecast?.forecast??0).toLocaleString('en-IN')} <small>plates</small></strong></div>
+      <div><span>Forecast range</span><strong>{forecast?.lowerBound??0}–{forecast?.upperBound??0} <small>plates</small></strong></div>
       <div><span>Confidence</span><strong>{forecast?.confidence??0}<small>%</small></strong></div>
     </div>
   </section>
