@@ -179,14 +179,12 @@ input, select { accent-color: var(--emerald); }
    contents scroll independently when the menu is taller than the screen. */
 .app-shell > .sidebar {
   position: sticky;
-  overflow: hidden;
   top: 0;
   align-self: flex-start;
   height: 100vh;
   height: 100dvh;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   overscroll-behavior-y: contain;
   scrollbar-width: thin;
   scrollbar-color: #c7d5c8 transparent;
