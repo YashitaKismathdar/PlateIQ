@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Check, Package, Sparkles, AlertTriangle, ArrowRight } from 'lucide-react'
+import { Check, Package, Sparkles, AlertTriangle, Activity, ArrowRight } from 'lucide-react'
 import { usePlateIQ, usePlateIQMetrics } from './plateiq-state'
 import { wasteSummary } from '@/lib/waste-engine'
 import { getAnalyticsMetrics, getDishOperationalContext, getLiveOperationsMetrics, getKitchenMetrics } from '@/lib/selectors'
