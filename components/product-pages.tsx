@@ -229,7 +229,7 @@ export function Overview(){
   return <div className="page-body stitch-overview">
     <div className="stitch-overview-topline"><div><span className="stitch-live-dot"/><span>LIVE KITCHEN OS</span><span className="stitch-dot-separator">•</span><span>Dinner service workspace</span></div><span className="stitch-updated">AI insights connected</span></div>
     <section className="stitch-welcome">
-      <div className="stitch-welcome-copy"><div className="stitch-eyebrow">SERVICE BRIEFING</div><h1>Good afternoon,<br/><em>{state.restaurant.name || 'your team'}.</em></h1><p>Your kitchen is moving. Here's what needs attention before the next rush.</p><div className="stitch-welcome-meta"><span>↗ Demand confidence <strong>{forecast?.confidence??0}%</strong></span><span>☀ Clear service window</span><span>✦ {state.stations.length} active stations</span></div></div>
+      <div className="stitch-welcome-copy"><div className="stitch-eyebrow">SERVICE BRIEFING</div><h1>Good afternoon,<br/><em>your team.</em></h1><p>Your kitchen is moving. Here's what needs attention before the next rush.</p><div className="stitch-welcome-meta"><span>↗ Demand confidence <strong>{forecast?.confidence??0}%</strong></span><span>☀ Clear service window</span><span>✦ {state.stations.length} active stations</span></div></div>
       <div className="stitch-welcome-actions"><div className="stitch-shift-pill"><span>ACTIVE SHIFT</span><strong>DINNER SERVICE</strong><small>Prep window · 17:00–22:00</small></div><div className="stitch-button-row"><button className="stitch-primary-action" onClick={()=>dispatch({type:'apply-plan'})}><Sparkles/> Apply preparation plan</button></div></div>
     </section>
     <MLDemandPrediction />
