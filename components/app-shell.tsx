@@ -132,8 +132,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <a
                 href={href}
                 key={label}
-                className={`nav-item ${path === href ? 'active' : ''}`}
-                aria-current={path === href ? 'page' : undefined}
+                className={`nav-item ${path === href || (href !== '/app' && path.startsWith(`${href}/`)) ? 'active' : ''}`}
+                aria-current={path === href || (href !== '/app' && path.startsWith(`${href}/`)) ? 'page' : undefined}
                 onClick={(event) => {
                   event.preventDefault()
                   setOpen(false)
