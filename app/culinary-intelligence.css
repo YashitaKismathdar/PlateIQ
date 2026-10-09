@@ -803,3 +803,6 @@ button, a, input, select { -webkit-tap-highlight-color:transparent; }
 .waste-table-footer{display:flex;justify-content:space-between;gap:12px;padding-top:13px;color:#8a948c;font-size:10px}
 @media(max-width:1100px){.waste-record-form{grid-template-columns:repeat(2,minmax(0,1fr))}.waste-submit-button{width:100%}}
 @media(max-width:760px){.waste-overview-grid{grid-template-columns:minmax(0,1fr)}.waste-category-panel,.waste-top-panel,.waste-record-form-panel,.waste-records-panel{padding:17px}.waste-demo-banner{align-items:flex-start;flex-wrap:wrap}.waste-demo-banner>span:last-child{flex-basis:100%;padding-left:18px}.waste-record-form{grid-template-columns:minmax(0,1fr)}.waste-records-heading{align-items:flex-start}.waste-table-controls{align-items:stretch;flex-direction:column}.waste-search{width:100%}.waste-category-filter{justify-content:space-between}.waste-category-filter select{flex:1}.waste-table-footer{flex-direction:column}.waste-panel-heading h2{font-size:18px}}
+
+.waste-export-button:disabled{opacity:.45;cursor:not-allowed;background:#f6f7f4;border-color:#e4e8e1}
+.waste-export-button:disabled:hover{background:#f6f7f4;border-color:#e4e8e1}
