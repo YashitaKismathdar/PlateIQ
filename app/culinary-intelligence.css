@@ -637,3 +637,12 @@ button, a, input, select { -webkit-tap-highlight-color:transparent; }
 @media (prefers-reduced-motion:reduce) {
   .live-menu-track span { transition:none; }
 }
+
+
+/* Tasks checklist: clearly label browser-persisted demo state and completed controls. */
+.tasks-demo-status { max-width:100%; font-size:9px; letter-spacing:.045em; }
+.tasks-check:disabled { cursor:default; opacity:1; }
+.tasks-check:disabled:hover { border-color:var(--ci-emerald); color:#fff; }
+@media (max-width:760px) {
+  .tasks-demo-status { align-self:flex-start; white-space:normal; }
+}
