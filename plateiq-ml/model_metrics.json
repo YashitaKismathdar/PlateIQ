@@ -1,0 +1,28 @@
+{
+  "model": "RandomForestRegressor",
+  "target": "num_orders",
+  "target_transform": "log1p; invert predictions with expm1",
+  "training_rows_for_evaluation": 361348,
+  "test_rows": 95200,
+  "test_week_start": 117,
+  "test_week_end": 145,
+  "mae": 88.22291638896472,
+  "rmse": 198.49110572624727,
+  "r2": 0.7046100497019827,
+  "sklearn_version": "1.8.0",
+  "features": [
+    "center_id",
+    "meal_id",
+    "city_code",
+    "region_code",
+    "center_type",
+    "category",
+    "cuisine",
+    "week",
+    "checkout_price",
+    "base_price",
+    "emailer_for_promotion",
+    "homepage_featured",
+    "op_area"
+  ]
+}
