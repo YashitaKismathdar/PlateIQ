@@ -141,7 +141,12 @@ body, .app-shell, .content { background: var(--ci-canvas); }
 .sidebar .brand-mark { width:32px; height:32px; display:grid; place-items:center; border-radius:10px; }
 .restaurant-switch { margin:5px 16px 20px; padding:12px; display:flex; align-items:center; gap:10px; }
 .sidebar-section-label { padding:0 24px 9px; color:#91aa98; font-size:9px; font-weight:800; letter-spacing:.15em; }
-.primary-navigation { overflow-y:auto; overscroll-behavior:contain; padding:0 12px 14px; display:flex; flex-direction:column; gap:4px; scrollbar-width:thin; }
+.primary-navigation { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; padding:0 12px 14px; display:flex; flex-direction:column; gap:4px; scrollbar-width:thin; scrollbar-color:rgba(197,220,190,.45) transparent; }
+.primary-navigation::-webkit-scrollbar { width:6px; }
+.primary-navigation::-webkit-scrollbar-thumb { background:rgba(197,220,190,.45); border-radius:999px; }
+.primary-navigation::-webkit-scrollbar-track { background:transparent; }
+.sidebar .brand, .sidebar .restaurant-switch, .sidebar-section-label { flex-shrink:0; }
+.sidebar-bottom { flex-shrink:0; }
 .sidebar .nav-item { min-height:42px; display:flex; align-items:center; gap:12px; padding:10px 12px; font-size:12px; font-weight:600; }
 .sidebar .nav-item > span:nth-child(2) { flex:1; }
 .sidebar .nav-item svg { flex:0 0 auto; }
