@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { initialState, reducer } from '@/components/plateiq-state'
 import { consumeForBatch, ingredientRequirements } from '@/lib/inventory-engine'
 import { wasteSummary } from '@/lib/waste-engine'
+import { validateStateConsistency } from '@/lib/selectors'
 
 const biryani = initialState.dishes.find(dish => dish.id === 'biryani')!
 
@@ -48,6 +49,17 @@ describe('inventory actions and batch consumption', () => {
     expect(result.items.every(inventoryItem => inventoryItem.currentStock >= 0)).toBe(true)
   })
 })
+
+  it('keeps derived metrics consistent after inventory actions', () => {
+    const ordered = reducer(initialState, { type: 'mark-ordered', itemId: 'tomatoes' })
+    const received = reducer(ordered, { type: 'receive-stock', itemId: 'tomatoes', amount: 8 })
+    expect(received.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(13.2)
+    expect(validateStateConsistency(received)).toEqual([])
+
+    const adjusted = reducer(received, { type: 'adjust-stock', itemId: 'tomatoes', amount: -2 })
+    expect(adjusted.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(11.2)
+    expect(validateStateConsistency(adjusted)).toEqual([])
+  })
 
 describe('waste records and summaries', () => {
   it('records waste for one dish and derives totals by category and dish', () => {
