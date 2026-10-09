@@ -29,3 +29,52 @@ nav { display:flex; flex-direction:column; gap:24px; }.nav-group { display:flex;
 @media (max-width:420px) { .metrics-grid { gap:8px; }.metric-card { padding:13px; }.metric-value { font-size:20px; }.metric-bottom { flex-direction:column; gap:3px; }.demo-banner { flex-wrap:wrap; }.demo-controls { margin-left:44px; }.surge-stats { gap:6px; }.surge-stats strong { font-size:14px; }.page-heading h1 { font-size:24px; } }
 
 @layer base { * { border-color: var(--line); outline-color: #b7d9bf; } }
+
+/* Responsive navigation and narrow-screen overflow safeguards */
+.sidebar {
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+.primary-navigation {
+  min-height: 0;
+}
+.topbar {
+  min-width: 0;
+}
+.top-actions {
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .sidebar {
+    max-width: min(290px, 88vw);
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+  .content {
+    min-width: 0;
+    width: 100%;
+  }
+  .breadcrumbs {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .system-status-label {
+    display: none;
+  }
+  .notification-panel {
+    position: fixed;
+    top: 66px;
+    right: 10px;
+    width: min(320px, calc(100vw - 20px));
+    max-height: calc(100dvh - 82px);
+    overflow-y: auto;
+  }
+  .table-wrap {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+  }
+}
+
