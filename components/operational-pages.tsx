@@ -23,7 +23,7 @@ export function InventoryPage(){
  const exportCsv=()=>{
   const header=['Ingredient','Current stock','Unit','Status','Reorder point','Daily usage','Days left','Unit cost INR','Stock value INR','Order state','Trend'];
   const lines=items.map(item=>[item.name,item.currentStock,item.unit,item.status,item.reorderPoint,item.dailyUsage,item.daysLeft,item.unitCost,(item.currentStock*item.unitCost).toFixed(2),item.orderStatus,item.trend]);
-  const csv=[header,...lines].map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
+  const csv=[header,...lines].map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   const link=document.createElement('a');link.href=url;link.download='plateiq-inventory.csv';link.click();URL.revokeObjectURL(url);
   setNotice('Inventory CSV exported.');
