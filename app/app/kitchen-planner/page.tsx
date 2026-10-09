@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import type React from 'react'\nimport { useMemo, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { AlertTriangle, ArrowRight, Check, CheckCircle2, ClipboardCheck, Clock3, Plus, Search, ShieldCheck, Sparkles, Users, X } from 'lucide-react'
 
