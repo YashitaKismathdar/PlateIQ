@@ -14,3 +14,17 @@ node_modules
 .next/
 .DS_Store
 .env
+# Python
+
+**pycache**/
+*.pyc
+.venv/
+venv/
+
+# Environment secrets
+
+.env
+
+# Large trained model — keep locally, don't push to GitHub
+
+plateiq-ml/plateiq_demand_model.joblib
