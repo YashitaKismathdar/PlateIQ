@@ -1,6 +1,7 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { Check, Package, Sparkles, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
+import { Check, Package, Sparkles, AlertTriangle, ArrowRight } from 'lucide-react'
 import { usePlateIQ, usePlateIQMetrics } from './plateiq-state'
 import { wasteSummary } from '@/lib/waste-engine'
 import { getAnalyticsMetrics, getDishOperationalContext, getKitchenMetrics } from '@/lib/selectors'
@@ -166,7 +167,7 @@ export function AnalyticsPage(){
    <Kpi label="Forecast confidence" value={metrics.forecastAccuracy.toFixed(1)+'%'} detail="Average confidence across forecasts"/>
    <Kpi label="Demand forecast" value={totalDemand.toLocaleString('en-IN')} detail="Forecast portions across dishes"/>
    <Kpi label="Prep efficiency" value={metrics.preparationEfficiency.toFixed(1)+'%'} detail="Prepared quantity vs forecast"/>
-   <Kpi label="Recorded waste" value={totalWaste.toFixed(1)+' kg'} detail="Across '+state.waste.length+' recorded events".replace('Across ','Across ' )}/>
+   <Kpi label="Recorded waste" value={totalWaste.toFixed(1)+' kg'} detail={state.waste.length+' recorded events'}}/>
    <Kpi label="Stock risk" value={lowStock.length.toString()} detail="Low or critical ingredients"/>
   </div>
   <div className="insights-main-grid">
@@ -180,7 +181,7 @@ export function AnalyticsPage(){
    <section className="panel insights-readiness-panel">
     <div className="insights-section-heading"><div><span className="insights-kicker">SERVICE READINESS</span><h2>Operational pulse</h2><p>Current status from the shared demo data.</p></div></div>
     <div className="insights-readiness-score"><div className="insights-readiness-ring" style={{'--insights-score':Math.max(0,Math.min(100,metrics.preparationEfficiency))+'%'} as React.CSSProperties}><strong>{Math.round(metrics.preparationEfficiency)}<small>%</small></strong></div><div><strong>Preparation efficiency</strong><p>{totalPrepared} portions prepared against {totalDemand} forecast.</p></div></div>
-    <div className="insights-readiness-list"><div><span><i className="insights-status-dot is-good"/>Inventory risk</span><strong>{lowStock.length===0?'No flagged items':lowStock.length+' items to review'}</strong></div><div><span><i className="insights-status-dot '+(completedBatches>0?'is-good':'is-neutral')+'"/>Completed batches</span><strong>{completedBatches}</strong></div><div><span><i className="insights-status-dot '+(state.waste.length>0?'is-watch':'is-neutral')+'"/>Waste records</span><strong>{state.waste.length}</strong></div><div><span><i className="insights-status-dot '+(state.events.length>0?'is-good':'is-neutral')+'"/>Operational events</span><strong>{state.events.length}</strong></div></div>
+    <div className="insights-readiness-list"><div><span><i className="insights-status-dot is-good"/>Inventory risk</span><strong>{lowStock.length===0?'No flagged items':lowStock.length+' items to review'}</strong></div><div><span><i className={'insights-status-dot '+(completedBatches>0?'is-good':'is-neutral')}/>Completed batches</span><strong>{completedBatches}</strong></div><div><span><i className={'insights-status-dot '+(state.waste.length>0?'is-watch':'is-neutral')}/>Waste records</span><strong>{state.waste.length}</strong></div><div><span><i className={'insights-status-dot '+(state.events.length>0?'is-good':'is-neutral')}/>Operational events</span><strong>{state.events.length}</strong></div></div>
    </section>
   </div>
   <section className="insights-insight-section"><div className="insights-section-heading"><div><span className="insights-kicker">SUGGESTED NEXT STEPS</span><h2>Signals worth a look</h2><p>Practical prompts generated from current demo values, not a trained AI model.</p></div><span className="insights-count-pill">{insightCards.length} signals</span></div>
