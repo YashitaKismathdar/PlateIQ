@@ -128,17 +128,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {navItems.map(([label, href]) => {
             const Icon = iconByLabel[label] ?? LayoutDashboard
             return (
-              <Link
+              <a
                 href={href}
                 key={label}
                 className={`nav-item ${path === href ? 'active' : ''}`}
+                aria-current={path === href ? 'page' : undefined}
                 onClick={() => setOpen(false)}
               >
                 <Icon />
                 {label}
                 {label === 'Live Operations' && <span className="live-pill">LIVE</span>}
                 {label === 'AI Copilot' && <span className="new-pill">AI</span>}
-              </Link>
+              </a>
             )
           })}
         </nav>
