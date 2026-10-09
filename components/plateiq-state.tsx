@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+import { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import type React from 'react'
 import type { BatchStatus, OperationalEvent, PlateIQAction, PlateIQState, Severity } from '@/lib/types'
 import { restaurant, dishes, inventory, stations, alerts, scenario, waste } from '@/lib/mock-data'
@@ -204,20 +204,29 @@ const Ctx = createContext<{ state: PlateIQState; dispatch: React.Dispatch<PlateI
 
 export function PlateIQProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState)
+  const [hydrated, setHydrated] = useState(false)
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('plateiq-state')
-      if (!saved) return
-      const parsed: unknown = JSON.parse(saved)
-      if (isValidPersistedState(parsed)) dispatch({ type: 'hydrate', state: parsed })
-      else localStorage.removeItem('plateiq-state')
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved)
+        if (isValidPersistedState(parsed)) dispatch({ type: 'hydrate', state: parsed })
+        else localStorage.removeItem('plateiq-state')
+      }
     } catch {
       localStorage.removeItem('plateiq-state')
+    } finally {
+      setHydrated(true)
     }
   }, [])
+
   useEffect(() => {
+    // Do not overwrite saved data with initialState before hydration finishes.
+    if (!hydrated) return
     try { localStorage.setItem('plateiq-state', JSON.stringify(state)) } catch {}
-  }, [state])
+  }, [state, hydrated])
+
   return <Ctx.Provider value={{ state, dispatch }}>{children}</Ctx.Provider>
 }
 
