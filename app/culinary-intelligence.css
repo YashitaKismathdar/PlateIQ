@@ -576,3 +576,5 @@ button, a, input, select { -webkit-tap-highlight-color:transparent; }
   .forecast-chart { gap:2px; }
   .forecast-chart-column > strong { font-size:9px; }
 }
+
+.forecast-chart-30-days { grid-template-columns:repeat(5,minmax(0,1fr)); }
