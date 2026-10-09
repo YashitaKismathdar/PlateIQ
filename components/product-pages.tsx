@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { Activity, ArrowRight, ArrowUpRight, Boxes, Check, CircleHelp, CloudRain, Sparkles, Zap } from 'lucide-react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -7,6 +7,180 @@ import { usePlateIQ } from './plateiq-state'
 import { getCopilotContext, getDishOperationalContext, getForecastMetrics, getKitchenMetrics, getRestaurantMetrics } from '@/lib/selectors'
 import { simulateScenario } from '@/lib/selectors'
 import { wasteSummary } from '@/lib/waste-engine'
+
+
+type MLPredictionInput = {
+  center_id: number;
+  meal_id: number;
+  city_code: number;
+  region_code: number;
+  center_type: string;
+  category: string;
+  cuisine: string;
+  week: number;
+  checkout_price: number;
+  base_price: number;
+  emailer_for_promotion: number;
+  homepage_featured: number;
+  op_area: number;
+};
+
+type MLPredictionResponse = {
+  predicted_orders: number;
+  [key: string]: unknown;
+};
+
+const PLATEIQ_API_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+function MLDemandPrediction() {
+  // These are illustrative starting values. Replace them with valid values
+  // from your dataset for the most meaningful predictions.
+  const [form, setForm] = useState<MLPredictionInput>({
+    center_id: 13,
+    meal_id: 1062,
+    city_code: 590,
+    region_code: 56,
+    center_type: 'TYPE_A',
+    category: 'Beverages',
+    cuisine: 'Thai',
+    week: 120,
+    checkout_price: 200,
+    base_price: 220,
+    emailer_for_promotion: 0,
+    homepage_featured: 0,
+    op_area: 4,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<MLPredictionResponse | null>(null);
+
+  function updateNumber(field: keyof MLPredictionInput, value: string) {
+    setForm((previous) => ({ ...previous, [field]: Number(value) }));
+  }
+
+  function updateText(field: 'center_type' | 'category' | 'cuisine', value: string) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+  }
+
+  async function submitPrediction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    setResult(null);
+
+    try {
+      const response = await fetch(`${PLATEIQ_API_URL}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) {
+        const details = await response.text();
+        throw new Error(details || `API request failed (${response.status})`);
+      }
+
+      const data = (await response.json()) as MLPredictionResponse;
+      if (typeof data.predicted_orders !== 'number') {
+        throw new Error('The API response did not include predicted_orders.');
+      }
+      setResult(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Could not connect to the PlateIQ prediction API.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const numberField = (
+    label: string,
+    field: keyof MLPredictionInput,
+    step = '1',
+  ) => (
+    <label className="plateiq-ml-field" key={field} style={{ display: "grid", gap: 6, fontSize: 13, fontWeight: 600 }}>
+      <span>{label}</span>
+      <input
+        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #d8dfd6", borderRadius: 8, background: "#fff", color: "#18251b" }}
+        type="number"
+        step={step}
+        value={String(form[field])}
+        onChange={(event) => updateNumber(field, event.target.value)}
+        required
+      />
+    </label>
+  );
+
+  const textField = (
+    label: string,
+    field: 'center_type' | 'category' | 'cuisine',
+  ) => (
+    <label className="plateiq-ml-field" key={field} style={{ display: "grid", gap: 6, fontSize: 13, fontWeight: 600 }}>
+      <span>{label}</span>
+      <input
+        style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1px solid #d8dfd6", borderRadius: 8, background: "#fff", color: "#18251b" }}
+        type="text"
+        value={form[field]}
+        onChange={(event) => updateText(field, event.target.value)}
+        required
+      />
+    </label>
+  );
+
+  return (
+    <section className="panel data-panel plateiq-ml-panel">
+      <div className="section-kicker"><Sparkles /> Trained ML model</div>
+      <h2>Predict meal demand</h2>
+      <p className="muted-copy">
+        Send meal, center, pricing, and promotion details to your trained
+        PlateIQ model. The values below are examples; use valid dataset values
+        for your demo.
+      </p>
+
+      <form onSubmit={submitPrediction}>
+        <div className="plateiq-ml-fields" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginTop: 18 }}>
+          {numberField('Center ID', 'center_id')}
+          {numberField('Meal ID', 'meal_id')}
+          {numberField('City code', 'city_code')}
+          {numberField('Region code', 'region_code')}
+          {textField('Center type', 'center_type')}
+          {textField('Meal category', 'category')}
+          {textField('Cuisine', 'cuisine')}
+          {numberField('Week number', 'week')}
+          {numberField('Checkout price', 'checkout_price', '0.01')}
+          {numberField('Base price', 'base_price', '0.01')}
+          {numberField('Email promotion (0 or 1)', 'emailer_for_promotion')}
+          {numberField('Homepage featured (0 or 1)', 'homepage_featured')}
+          {numberField('Operating area', 'op_area', '0.01')}
+        </div>
+
+        <div className="heading-actions">
+          <button className="primary-button" type="submit" disabled={loading}>
+            {loading ? 'Predicting…' : 'Predict demand'} <ArrowRight />
+          </button>
+        </div>
+      </form>
+
+      {error && (
+        <p role="alert" className="plateiq-ml-error" style={{ color: "#b42318", marginTop: 14 }}>
+          Prediction failed: {error}
+        </p>
+      )}
+
+      {result && (
+        <div className="plateiq-ml-result" aria-live="polite" style={{ marginTop: 18, padding: 18, borderRadius: 12, background: "#edf7ee", border: "1px solid #cde6d0" }}>
+          <span>MODEL PREDICTION</span>
+          <strong style={{ display: "block", fontSize: 32, marginTop: 6 }}>{Math.round(result.predicted_orders).toLocaleString('en-IN')}</strong>
+          <p>Predicted orders for the selected meal and center.</p>
+        </div>
+      )}
+    </section>
+  );
+}
 
 function Metric({label,value,detail,trend}:{label:string;value:string;detail:string;trend:string}){return <div className="metric-card"><div className="metric-top"><span>{label}</span><span className="metric-dot"/></div><div className="metric-value">{value}</div><div className="metric-bottom"><span className="positive">{trend}</span><span>{detail}</span></div></div>}
 function Header({title,subtitle}:{title:string;subtitle:string}){return <div className="page-heading"><div><div className="eyebrow">TUESDAY, 24 JUNE 2025 <span className="separator">•</span> LUNCH SERVICE</div><h1>{title}</h1><p>{subtitle}</p></div></div>}
@@ -58,6 +232,7 @@ export function Overview(){
       <div className="stitch-welcome-copy"><div className="stitch-eyebrow">TUESDAY SERVICE BRIEFING · HYDERABAD</div><h1>Good afternoon,<br/><em>Chef Marcus.</em></h1><p>Your kitchen is moving. Here's what needs attention before the next rush.</p><div className="stitch-welcome-meta"><span>↗ Demand confidence <strong>{forecast?.confidence??0}%</strong></span><span>☀ Clear service window</span><span>✦ {state.stations.length} active stations</span></div></div>
       <div className="stitch-welcome-actions"><div className="stitch-shift-pill"><span>ACTIVE SHIFT</span><strong>DINNER SERVICE</strong><small>Prep window · 17:00–22:00</small></div><div className="stitch-button-row"><button className="stitch-primary-action" onClick={()=>dispatch({type:'apply-plan'})}><Sparkles/> Apply preparation plan</button></div></div>
     </section>
+    <MLDemandPrediction />
     <section className="stitch-kpi-grid">
       <article className="stitch-kpi"><div className="stitch-kpi-heading"><span>PREDICTED DEMAND</span><b className="stitch-kpi-tag">LIVE PROJECTION</b></div><strong>{metrics.demand.toLocaleString('en-IN')}</strong><div className="stitch-kpi-foot"><span>Peak service forecast</span><span className="stitch-mini-bars"><i/><i/><i/><i/><i/><i/><i/></span></div></article>
       <article className="stitch-kpi"><div className="stitch-kpi-heading"><span>FOOD WASTE VARIANCE</span><b className="stitch-kpi-tag">TRACKING</b></div><strong>{metrics.wasteKg.toFixed(1)} <small>kg</small></strong><div className="stitch-kpi-foot"><span>₹{metrics.wasteCost.toLocaleString('en-IN')} estimated cost</span><span className="stitch-kpi-positive">↓ monitored</span></div></article>
