@@ -128,7 +128,7 @@ function Copilot() {
         : 'No ingredients are currently marked Low or Critical in this sample inventory. Check the stock register before placing orders.';
     }else if(/waste|wasted|surplus|spoil/.test(q)){
       answer=topWaste.length
-        ? 'Recorded waste is '+context.waste.wasteKg.toFixed(1)+' kg (estimated cost ₹'+Math.round(context.waste.wasteCost).toLocaleString('en-IN')+'). Largest recorded contributors: '+topWaste.map(item=>(state.dishes.find(d=>d.id===item.dishId)?.name??item.dishId)+' ('+item.wasteKg.toFixed(1)+' kg)').join(', ')+'. These are recorded demo entries, not a live waste sensor feed.'
+        ? 'Recorded waste is '+context.waste.wasteKg.toFixed(1)+' kg (estimated cost ₹'+Math.round(context.waste.wasteCost).toLocaleString('en-IN')+'). Largest recorded contributors: '+topWaste.map(item=>(state.dishes.find(d=>d.id===item.dishId)?.name??item.dishId)+' ('+item.wasteKg.toFixed(1)+' kg)').join(', ')+'. These are recorded entries, not a live waste sensor feed.'
         : 'There are no waste entries in the current local workspace state. Record waste on the Waste Management page to start identifying repeat causes.';
     }else if(/prep|cook|batch|make|prepare|dish|menu|demand|orders/.test(q)){
       const forecast=context.forecast;
@@ -197,11 +197,11 @@ export function ForecastingPage() {
     <div className="stitch-overview-topline"><div><span className="stitch-live-dot"/><span>PLATEIQ INTELLIGENCE</span><span className="stitch-dot-separator">•</span><span>Demand planning</span></div><span className="stitch-updated">SAMPLE DATA · LOCAL STATE</span></div>
     <section className="stitch-forecast-hero">
       <div><div className="stitch-eyebrow">FORECASTING WORKSPACE · {state.restaurant.name.toUpperCase()}</div><h1>Plan ahead.<br/><em>Waste less.</em></h1><p>Turn your demand outlook into practical preparation decisions for each menu item.</p></div>
-      <div className="stitch-forecast-controls"><span className="stitch-forecast-label">SERVICE PERIOD</span><div className="stitch-forecast-toggle"><button className={period==='Lunch'?'selected':''} onClick={()=>setPeriod('Lunch')}>Lunch</button><button className={period==='Dinner'?'selected':''} onClick={()=>setPeriod('Dinner')}>Dinner</button></div><span className="stitch-forecast-note">Demo forecast · {period} service</span></div>
+      <div className="stitch-forecast-controls"><span className="stitch-forecast-label">SERVICE PERIOD</span><div className="stitch-forecast-toggle"><button className={period==='Lunch'?'selected':''} onClick={()=>setPeriod('Lunch')}>Lunch</button><button className={period==='Dinner'?'selected':''} onClick={()=>setPeriod('Dinner')}>Dinner</button></div><span className="stitch-forecast-note">Current forecast · {period} service</span></div>
     </section>
     <section className="stitch-forecast-kpis">
       <article><span>FORECAST DEMAND</span><strong>{forecastTotal.toLocaleString('en-IN')} <small>plates</small></strong><p>Projected across {state.dishes.length} menu items</p></article>
-      <article><span>ALREADY ORDERED</span><strong>{actualTotal.toLocaleString('en-IN')} <small>plates</small></strong><p>Current demo order count</p></article>
+      <article><span>ALREADY ORDERED</span><strong>{actualTotal.toLocaleString('en-IN')} <small>plates</small></strong><p>Current order count</p></article>
       <article><span>PREP TO PLAN</span><strong>{prepTotal.toLocaleString('en-IN')} <small>plates</small></strong><p>Suggested remaining batch quantities</p></article>
       <article><span>MODEL CONFIDENCE</span><strong>{confidence}<small>%</small></strong><p>Average menu-item confidence</p></article>
     </section>
