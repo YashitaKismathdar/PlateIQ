@@ -578,3 +578,11 @@ button, a, input, select { -webkit-tap-highlight-color:transparent; }
 }
 
 .forecast-chart-30-days { grid-template-columns:repeat(5,minmax(0,1fr)); }
+
+
+/* Overview data clarity and waste breakdown */
+.stitch-top-waste { display: grid; gap: 8px; margin: 14px 0 4px; }
+.stitch-top-waste > span { color: var(--ci-muted); font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.stitch-top-waste > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--ci-border); font-size: 12px; }
+.stitch-top-waste > div strong { color: var(--ci-text); font-weight: 650; }
+.stitch-top-waste > div span { color: var(--ci-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
