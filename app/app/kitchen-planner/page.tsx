@@ -1,6 +1,6 @@
 'use client'
 
-import type React from 'react'\nimport { useMemo, useState } from 'react'
+import type React from 'react'\nimport { useEffect, useMemo, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { AlertTriangle, ArrowRight, Check, CheckCircle2, ClipboardCheck, Clock3, Plus, Search, ShieldCheck, Sparkles, Users, X } from 'lucide-react'
 
@@ -24,6 +24,37 @@ function Metric({ label, value, detail, icon: Icon }: { label: string; value: st
 
 export default function KitchenPlannerPage() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [tasksLoaded, setTasksLoaded] = useState(false)
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('plateiq-kitchen-tasks-v1')
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.every((item) =>
+          item && typeof item === 'object'
+          && typeof item.id === 'number'
+          && typeof item.title === 'string'
+          && ['Pending', 'In Progress', 'Completed'].includes(item.status)
+        )) {
+          setTasks(parsed as Task[])
+        }
+      }
+    } catch {
+      // Keep the built-in sample checklist if browser storage is unavailable.
+    } finally {
+      setTasksLoaded(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!tasksLoaded) return
+    try {
+      window.localStorage.setItem('plateiq-kitchen-tasks-v1', JSON.stringify(tasks))
+    } catch {
+      // The checklist remains usable for the current session if storage is blocked.
+    }
+  }, [tasks, tasksLoaded])
   const [category, setCategory] = useState<(typeof categoryOptions)[number]>('All Tasks')
   const [status, setStatus] = useState<'All' | Status>('All')
   const [search, setSearch] = useState('')
@@ -42,8 +73,11 @@ export default function KitchenPlannerPage() {
   }), [tasks, category, status, search])
 
   function advanceTask(task: Task) {
-    const next: Status = task.status === 'Pending' ? 'In Progress' : task.status === 'In Progress' ? 'Completed' : 'Pending'
-    setTasks(current => current.map(item => item.id === task.id ? { ...item, status: next, progress: next === 'Completed' ? 100 : next === 'In Progress' ? Math.max(item.progress, 50) : 0 } : item))
+    if (task.status === 'Completed') return
+    const next: Status = task.status === 'Pending' ? 'In Progress' : 'Completed'
+    setTasks(current => current.map(item => item.id === task.id
+      ? { ...item, status: next, progress: next === 'Completed' ? 100 : Math.max(item.progress, 50) }
+      : item))
   }
 
   function addTask(event: React.FormEvent<HTMLFormElement>) {
@@ -60,9 +94,9 @@ export default function KitchenPlannerPage() {
 
   return <AppShell>
     <div className="page-body stitch-workspace-page stitch-page-tasks">
-      <div className="stitch-page-intro"><div><div className="stitch-page-kicker"><span className="stitch-live-dot" /> PLATEIQ INTELLIGENCE <span className="separator">/</span> LIVE WORKSPACE</div><h1>Tasks &amp; Checklists</h1><p>Coordinate kitchen prep, food safety checks and shift hand-offs in one workspace.</p></div><div className="stitch-page-status"><span className="stitch-live-dot" /> Shift workspace</div></div>
+      <div className="stitch-page-intro"><div><div className="stitch-page-kicker"><span className="stitch-live-dot" /> PLATEIQ INTELLIGENCE <span className="separator">/</span> LIVE WORKSPACE</div><h1>Tasks &amp; Checklists</h1><p>Coordinate kitchen prep, food safety checks and shift hand-offs in one workspace.</p></div><div className="stitch-page-status tasks-demo-status"><span className="stitch-live-dot" /> DEMO CHECKLIST · SAVED IN THIS BROWSER</div></div>
 
-      <section className="panel tasks-hero"><div><div className="section-kicker"><ClipboardCheck size={15} /> SHIFT EXECUTION</div><h2>Make every service task visible and accountable.</h2><p className="muted-copy">Track priority, ownership and progress, and keep the team aligned before service.</p></div><button className="tasks-primary-button" onClick={() => setNewTaskOpen(value => !value)}>{newTaskOpen ? <X size={16} /> : <Plus size={16} />}{newTaskOpen ? 'Cancel' : 'New task'}</button></section>
+      <section className="panel tasks-hero"><div><div className="section-kicker"><ClipboardCheck size={15} /> SHIFT EXECUTION</div><h2>Make every service task visible and accountable.</h2><p className="muted-copy">Track priority, ownership and progress. Changes are saved in this browser; this is not connected to a live kitchen task system.</p></div><button className="tasks-primary-button" onClick={() => setNewTaskOpen(value => !value)}>{newTaskOpen ? <X size={16} /> : <Plus size={16} />}{newTaskOpen ? 'Cancel' : 'New task'}</button></section>
 
       {newTaskOpen && <form className="panel tasks-new-form" onSubmit={addTask}><label className="tasks-field"><span>Task name</span><input autoFocus required value={newTitle} onChange={event => setNewTitle(event.target.value)} placeholder="e.g. Check incoming produce" /></label><label className="tasks-field"><span>Category</span><select value={newCategory} onChange={event => setNewCategory(event.target.value as Category)}>{categoryOptions.filter((item): item is Category => item !== 'All Tasks').map(item => <option key={item}>{item}</option>)}</select></label><button className="tasks-primary-button" type="submit"><Plus size={16} /> Add task</button></form>}
 
@@ -74,10 +108,10 @@ export default function KitchenPlannerPage() {
       </section>
 
       <section className="panel tasks-list-panel">
-        <div className="tasks-panel-heading"><div><div className="section-kicker">SHIFT CHECKLIST</div><h2>Task queue</h2><p className="muted-copy">Use the check control to move tasks through Pending, In Progress and Completed.</p></div><div className="tasks-filter-controls"><label className="tasks-search"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search tasks..." aria-label="Search tasks" /></label><select aria-label="Filter by status" value={status} onChange={event => setStatus(event.target.value as typeof status)}><option value="All">All statuses</option><option>Pending</option><option>In Progress</option><option>Completed</option></select></div></div>
+        <div className="tasks-panel-heading"><div><div className="section-kicker">SHIFT CHECKLIST</div><h2>Task queue</h2><p className="muted-copy">Start pending work, then mark it complete. Your checklist stays saved in this browser.</p></div><div className="tasks-filter-controls"><label className="tasks-search"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search tasks..." aria-label="Search tasks" /></label><select aria-label="Filter by status" value={status} onChange={event => setStatus(event.target.value as typeof status)}><option value="All">All statuses</option><option>Pending</option><option>In Progress</option><option>Completed</option></select></div></div>
         <div className="tasks-category-tabs" role="tablist" aria-label="Task categories">{categoryOptions.map(item => <button key={item} role="tab" aria-selected={category === item} className={category === item ? 'active' : ''} onClick={() => setCategory(item)}>{item}<span>{item === 'All Tasks' ? tasks.length : tasks.filter(task => task.category === item).length}</span></button>)}</div>
         <div className="tasks-list">{filtered.map(task => <article className={`tasks-item ${task.status === 'Completed' ? 'is-completed' : ''}`} key={task.id}>
-          <button className={`tasks-check ${task.status === 'Completed' ? 'checked' : ''}`} onClick={() => advanceTask(task)} aria-label={`Advance status for ${task.title}`} title="Advance task status">{task.status === 'Completed' ? <Check size={17} /> : <ArrowRight size={16} />}</button>
+          <button className={`tasks-check ${task.status === 'Completed' ? 'checked' : ''}`} onClick={() => advanceTask(task)} disabled={task.status === 'Completed'} aria-label={task.status === 'Pending' ? `Start ${task.title}` : task.status === 'In Progress' ? `Complete ${task.title}` : `${task.title} completed`} title={task.status === 'Pending' ? 'Start task' : task.status === 'In Progress' ? 'Mark complete' : 'Completed'}>{task.status === 'Completed' ? <Check size={17} /> : <ArrowRight size={16} />}</button>
           <div className="tasks-item-main"><div className="tasks-item-title-row"><h3>{task.title}</h3><span className={`tasks-priority priority-${task.priority.toLowerCase()}`}>{task.priority}</span><span className={`tasks-status status-${task.status.toLowerCase().replace(' ', '-')}`}>{task.status}</span></div><p>{task.detail}</p><div className="tasks-item-meta"><span>{task.station}</span><span><Users size={13} /> {task.owner}</span><span><Clock3 size={13} /> {task.due}</span><span>{task.category}</span></div></div>
           <div className="tasks-progress"><div><span>Progress</span><strong>{task.progress}%</strong></div><div className="tasks-progress-track"><span style={{ width: `${task.progress}%` }} /></div><small>{task.status === 'Completed' ? 'Completed and checked off' : task.status === 'In Progress' ? 'Work underway' : 'Awaiting start'}</small></div>
         </article>)}{filtered.length === 0 && <div className="tasks-empty"><Search size={22} /><strong>No tasks match these filters</strong><span>Try another search term or choose a different status.</span></div>}</div>
