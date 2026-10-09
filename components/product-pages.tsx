@@ -70,7 +70,7 @@ export function Overview(){
     </section>
     <section className="stitch-main-grid">
       <div className="stitch-main-column">
-        <div className="stitch-section-heading"><div><div className="stitch-eyebrow">INTELLIGENCE & PLANNING</div><h2>Dynamic service demand</h2><p>Current current forecast, preparation progress, and operational next steps.</p></div><span className="stitch-section-status"><i/> Workspace snapshot</span></div>
+        <div className="stitch-section-heading"><div><div className="stitch-eyebrow">INTELLIGENCE & PLANNING</div><h2>Dynamic service demand</h2><p>Current forecast, preparation progress, and operational next steps.</p></div><span className="stitch-section-status"><i/> Workspace snapshot</span></div>
         <div className="stitch-chart-card"><Chart title="Demand & preparation forecast"/><div className="stitch-chart-footer"><div><span>Model metric (current calculation)</span><strong>{metrics.forecastAccuracy.toFixed(1)}%</strong></div><div><span>Projected demand</span><strong>{(forecast?.projectedDemand??metrics.demand).toLocaleString('en-IN')}</strong></div><div><span>Prep completion</span><strong>{metrics.demand?Math.min(100,Math.round(metrics.prepared/metrics.demand*100)):0}%</strong></div></div></div>
         <div className="stitch-section-heading stitch-section-heading-spaced"><div><div className="stitch-eyebrow">KITCHEN OPERATIONS</div><h2>Kitchen stations</h2><p>Configured station status and capacity.</p></div><span className="stitch-view-link"> {state.stations.length} stations <ArrowUpRight/></span></div>
         <div className="stitch-station-grid">{state.stations.slice(0,4).map((station,index)=><article className="stitch-station-card" key={station.id}><div className="stitch-station-head"><span className={`stitch-station-dot ${station.status==='At Risk'?'warn':station.status==='Busy'?'busy':''}`}/><span>{station.name}</span></div><strong>{station.status==='Busy'?'In service':station.status==='At Risk'?'Needs attention':'Ready'}</strong><div className="stitch-station-progress"><i style={{width:`${station.capacity}%`}}/></div><small>{station.status==='At Risk'?'Review capacity':station.status==='Busy'?'Orders in progress':'Flow optimal'}</small></article>)}</div>
@@ -146,7 +146,7 @@ function Copilot() {
     <div className="copilot-demo-notice"><span className="copilot-demo-pulse"/> COPILOT STATUS <span>Answers are generated from PlateIQ's local workspace state. No live AI model or external data feed is connected.</span></div>
     <div className="copilot-hero">
       <div className="copilot-hero-copy"><span className="copilot-overline"><Sparkles size={14}/> KITCHEN DECISION SUPPORT</span><h2>Good service starts with<br/><em>the right next question.</em></h2><p>Explore demand, preparation, stock pressure, and recorded waste in one place.</p></div>
-      <div className="copilot-hero-stat"><span>Forecast confidence</span><strong>{context.forecast?.confidence??0}<small>%</small></strong><small>Current current forecast</small></div>
+      <div className="copilot-hero-stat"><span>Forecast confidence</span><strong>{context.forecast?.confidence??0}<small>%</small></strong><small>Current forecast</small></div>
     </div>
     <div className="copilot-content-grid">
       <section className="panel copilot-chat-panel">
