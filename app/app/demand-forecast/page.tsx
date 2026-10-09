@@ -71,7 +71,7 @@ export default function DemandForecastPage() {
   }), [items, query, riskFilter])
 
   const chartDays = range === '7 days' ? days : range === '14 days' ? [
-    { day: 'Oct 9–10', date: 'Days 1–2', demand: 464, actual: 204 },
+    { day: 'Oct 9–10', date: 'Days 1–2', demand: 464, actual: null },
     { day: 'Oct 11–12', date: 'Days 3–4', demand: 460, actual: null },
     { day: 'Oct 13–14', date: 'Days 5–6', demand: 417, actual: null },
     { day: 'Oct 15–16', date: 'Days 7–8', demand: 448, actual: null },
@@ -83,9 +83,7 @@ export default function DemandForecastPage() {
     { day: 'Week 2', date: 'Oct 16–22', demand: 1620, actual: null },
     { day: 'Week 3', date: 'Oct 23–29', demand: 1690, actual: null },
     { day: 'Week 4', date: 'Oct 30–Nov 5', demand: 1735, actual: null },
-    { day: 'Week 5', date: 'Nov 6–12', demand: 1680, actual: null },
-    { day: 'Week 6', date: 'Nov 13–19', demand: 1770, actual: null },
-    { day: 'Week 7', date: 'Nov 20–26', demand: 1810, actual: null },
+    { day: 'Week 5', date: 'Nov 6–8', demand: 720, actual: null },
   ]
   const chartScale = range === '7 days' ? 280 : range === '14 days' ? 550 : 1900
   const totalDemand = items.reduce((sum, item) => sum + item.forecast, 0)
