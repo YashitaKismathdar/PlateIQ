@@ -167,7 +167,7 @@ export function AnalyticsPage(){
    <Kpi label="Forecast confidence" value={metrics.forecastAccuracy.toFixed(1)+'%'} detail="Average confidence across forecasts"/>
    <Kpi label="Demand forecast" value={totalDemand.toLocaleString('en-IN')} detail="Forecast portions across dishes"/>
    <Kpi label="Prep efficiency" value={metrics.preparationEfficiency.toFixed(1)+'%'} detail="Prepared quantity vs forecast"/>
-   <Kpi label="Recorded waste" value={totalWaste.toFixed(1)+' kg'} detail={state.waste.length+' recorded events'}}/>
+   <Kpi label="Recorded waste" value={totalWaste.toFixed(1)+' kg'} detail={state.waste.length+' recorded events'}/>
    <Kpi label="Stock risk" value={lowStock.length.toString()} detail="Low or critical ingredients"/>
   </div>
   <div className="insights-main-grid">
