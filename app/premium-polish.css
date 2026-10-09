@@ -301,3 +301,48 @@ input, select { accent-color: var(--emerald); }
     overflow-y: auto;
   }
 }
+
+
+/* Compact sidebar navigation so all workspace destinations fit without
+   repeatedly scrolling on normal laptop-height screens. */
+.app-shell > .sidebar .sidebar-main > .primary-navigation {
+  gap: 3px;
+  padding: 2px 0 8px;
+}
+.app-shell > .sidebar .sidebar-main > .primary-navigation > .nav-item {
+  min-height: 35px;
+  padding: 7px 10px;
+  gap: 9px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.app-shell > .sidebar .sidebar-main > .primary-navigation > .nav-item svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+}
+.app-shell > .sidebar .sidebar-main > .brand {
+  padding-bottom: 20px;
+}
+.app-shell > .sidebar .sidebar-main > .sidebar-section-label {
+  margin-bottom: 8px;
+}
+@media (max-height: 800px) and (min-width: 761px) {
+  .app-shell > .sidebar {
+    padding-top: 18px;
+  }
+  .app-shell > .sidebar .sidebar-main > .brand {
+    padding-bottom: 14px;
+  }
+  .app-shell > .sidebar .sidebar-main > .primary-navigation > .nav-item {
+    min-height: 32px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  .app-shell > .sidebar .sidebar-main > .sidebar-section-label {
+    margin-bottom: 5px;
+  }
+  .app-shell > .sidebar .sidebar-bottom {
+    gap: 8px;
+  }
+}
