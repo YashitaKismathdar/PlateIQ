@@ -79,7 +79,7 @@ export default function DemandForecastPage() {
 
   function applyRecommendations() {
     dispatch({ type: 'apply-plan' })
-    setNotice('Forecast plan recalculated with the current scenario and saved to the shared demo workspace.')
+    setNotice('Demo preparation plan recalculated. Changes are stored in this browser, not a shared live workspace.')
   }
 
   function resetView() {
