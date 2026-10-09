@@ -60,5 +60,74 @@ export function InventoryPage(){
   </section>
  </PageFrame>
 }
-export function WasteIntelligencePage(){const {state,dispatch}=usePlateIQ();const [category,setCategory]=useState('All');const summary=wasteSummary(state.waste);const records=state.waste.filter(w=>category==='All'||w.category===category);const topDishes=Object.entries(summary.byDish).sort((a,b)=>b[1].wasteKg-a[1].wasteKg).slice(0,3);return <PageFrame title="Waste intelligence" subtitle="Turn every avoided plate into measurable savings."><div className="metrics-grid"><Kpi label="Food waste" value={`${summary.wasteKg.toFixed(1)} kg`} detail="from waste records"/><Kpi label="Waste cost" value={`₹${Math.round(summary.wasteCost).toLocaleString('en-IN')}`} detail="derived cost"/><Kpi label="Waste reduction" value={summary.wasteReductionPct===null?'—':`${summary.wasteReductionPct.toFixed(1)}%`} detail={summary.wasteReductionPct===null?'Baseline unavailable':'vs baseline'}/><Kpi label="Potential savings" value={summary.potentialSavings===null?'—':`₹${summary.potentialSavings.toLocaleString('en-IN')}`} detail={summary.potentialSavings===null?'Baseline unavailable':'derived savings'}/></div><div className="dashboard-grid"><section className="panel"><div className="section-kicker">Waste trend</div><h2>{summary.wasteTrend}</h2><p className="muted-copy">A historical baseline is required before reduction can be calculated.</p></section><section className="panel"><div className="section-kicker">Waste by category</div>{Object.entries(summary.byCategory).map(([name,value])=><div className="setting-row" key={name}><span>{name}</span><strong>{value.wasteKg.toFixed(1)} kg · ₹{value.wasteCost.toLocaleString('en-IN')}</strong></div>)}</section></div><section className="panel"><div className="section-kicker">Top wasted dishes</div>{topDishes.map(([dishId,value])=><div className="setting-row" key={dishId}><span>{state.dishes.find(dish=>dish.id===dishId)?.name||dishId}</span><strong>{value.wasteKg.toFixed(1)} kg</strong></div>)}</section><div className="filter-row"><label>Category<select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option><option>Prepared Food</option><option>Spoilage</option><option>Overproduction</option><option>Other</option></select></label></div><section className="panel data-panel"><div className="section-kicker"><AlertTriangle/> Waste records</div><div className="table-wrap"><table><thead><tr><th>Dish</th><th>Category</th><th>Quantity</th><th>Cost</th><th>Date/Time</th><th>Cause</th><th>Action</th></tr></thead><tbody>{records.map(w=><tr key={w.id}><td>{state.dishes.find(d=>d.id===w.dishId)?.name||w.dishId}</td><td>{w.category}</td><td>{w.wasteKg.toFixed(1)} {w.unit}</td><td>₹{w.wasteCost}</td><td>{w.date}</td><td>{w.cause}</td><td><button className="text-button" onClick={()=>dispatch({type:'record-waste',dishId:w.dishId,wasteKg:.5,category:w.category,cause:`Additional event: ${w.cause}`})}>Record 0.5 kg</button></td></tr>)}</tbody></table></div></section></PageFrame>}
+export function WasteIntelligencePage(){
+ const {state,dispatch}=usePlateIQ();
+ const [category,setCategory]=useState('All');
+ const [query,setQuery]=useState('');
+ const [dishId,setDishId]=useState(state.dishes[0]?.id??'');
+ const [newCategory,setNewCategory]=useState<'Prepared Food'|'Spoilage'|'Overproduction'|'Other'>('Overproduction');
+ const [quantity,setQuantity]=useState('0.5');
+ const [cause,setCause]=useState('Overproduction');
+ const [notice,setNotice]=useState('');
+ const summary=wasteSummary(state.waste);
+ const categories=['Prepared Food','Spoilage','Overproduction','Other'] as const;
+ const records=state.waste.filter(w=>(category==='All'||w.category===category)&&((state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId).toLowerCase().includes(query.trim().toLowerCase())||w.cause.toLowerCase().includes(query.trim().toLowerCase())));
+ const topDishes=Object.entries(summary.byDish).sort((a,b)=>b[1].wasteKg-a[1].wasteKg).slice(0,5);
+ const categoryTotal=Object.values(summary.byCategory).reduce((sum,item)=>sum+item.wasteKg,0);
+ const exportCsv=()=>{
+  const header=['Dish','Category','Waste kg','Waste cost INR','Date','Cause'];
+  const lines=state.waste.map(w=>[state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId,w.category,w.wasteKg,w.wasteCost,w.date,w.cause]);
+  const csv=[header,...lines].map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  const link=document.createElement('a');link.href=url;link.download='plateiq-waste-records.csv';link.click();URL.revokeObjectURL(url);
+  setNotice('Waste records CSV exported.');
+ };
+ const recordWaste=(event:React.FormEvent<HTMLFormElement>)=>{
+  event.preventDefault();
+  const amount=Number(quantity);
+  if(!dishId||!Number.isFinite(amount)||amount<=0||!cause.trim()){setNotice('Choose a dish and enter a valid quantity and cause.');return;}
+  dispatch({type:'record-waste',dishId,wasteKg:amount,category:newCategory,cause:cause.trim()});
+  setNotice('Waste record added to the local demo state.');
+  setQuantity('0.5');
+ };
+ const formatDate=(value:string)=>{const parsed=new Date(value);return Number.isNaN(parsed.getTime())?value:parsed.toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});};
+ return <PageFrame title="Waste intelligence" subtitle="Find where food is being lost, record waste consistently, and identify practical ways to reduce it.">
+  <div className="waste-demo-banner"><span className="waste-demo-indicator"/> DEMO DATA <span>Records and actions update this browser's shared demo state. No live POS or weighing system is connected.</span></div>
+  {notice&&<div className="waste-notice" role="status">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss message">×</button></div>}
+  <div className="metrics-grid waste-metrics">
+   <Kpi label="Total recorded waste" value={summary.wasteKg.toFixed(1)+' kg'} detail={state.waste.length+' recorded events'}/>
+   <Kpi label="Estimated waste cost" value={'₹'+Math.round(summary.wasteCost).toLocaleString('en-IN')} detail="using recorded cost estimates"/>
+   <Kpi label="Waste reduction" value="—" detail="Needs a comparable historical baseline"/>
+   <Kpi label="Potential savings" value="—" detail="Not estimated without a baseline"/>
+  </div>
+  <div className="waste-overview-grid">
+   <section className="panel waste-category-panel">
+    <div className="waste-panel-heading"><div><span className="waste-kicker">WHERE IT HAPPENS</span><h2>Waste by category</h2><p>Recorded quantity across all waste events.</p></div><span className="waste-total-chip">{summary.wasteKg.toFixed(1)} kg total</span></div>
+    <div className="waste-category-list">{categories.map((name,index)=>{const item=summary.byCategory[name];const pct=summary.wasteKg?Math.min(100,item.wasteKg/summary.wasteKg*100):0;return <div className="waste-category-row" key={name}><div className="waste-category-meta"><span className={'waste-category-mark waste-category-mark-'+index}/><strong>{name}</strong><span>{item.wasteKg.toFixed(1)} kg</span></div><div className="waste-bar-track"><span className={'waste-bar-fill waste-bar-fill-'+index} style={{width:pct+'%'}}/></div><div className="waste-category-foot"><span>{pct.toFixed(0)}% of recorded waste</span><strong>₹{Math.round(item.wasteCost).toLocaleString('en-IN')}</strong></div></div>})}</div>
+   </section>
+   <section className="panel waste-top-panel">
+    <div className="waste-panel-heading"><div><span className="waste-kicker">BIGGEST CONTRIBUTORS</span><h2>Top wasted dishes</h2><p>Prioritise the dishes with the most recorded waste.</p></div></div>
+    {topDishes.length?<div className="waste-top-list">{topDishes.map(([id,item],index)=>{const dish=state.dishes.find(d=>d.id===id);const pct=summary.wasteKg?item.wasteKg/summary.wasteKg*100:0;return <div className="waste-top-row" key={id}><span className="waste-rank">{String(index+1).padStart(2,'0')}</span><div className="waste-top-main"><strong>{dish?.name??id}</strong><div className="waste-bar-track"><span className="waste-bar-fill" style={{width:pct+'%'}}/></div></div><div className="waste-top-value"><strong>{item.wasteKg.toFixed(1)} kg</strong><small>₹{Math.round(item.wasteCost).toLocaleString('en-IN')}</small></div></div>})}</div>:<div className="waste-empty"><span>✓</span><strong>No waste records yet</strong><p>Record a waste event to start building this view.</p></div>}
+    <div className="waste-baseline-note"><AlertTriangle size={16}/><span>Trend and savings are not shown as a percentage because this demo has no verified comparison baseline.</span></div>
+   </section>
+  </div>
+  <section className="panel waste-record-form-panel">
+   <div className="waste-panel-heading"><div><span className="waste-kicker">LOG AN EVENT</span><h2>Record food waste</h2><p>Capture a quantity and cause so the team can spot repeat patterns.</p></div><span className="waste-form-icon">＋</span></div>
+   <form className="waste-record-form" onSubmit={recordWaste}>
+    <label>Dish<select value={dishId} onChange={e=>setDishId(e.target.value)} required>{state.dishes.map(dish=><option key={dish.id} value={dish.id}>{dish.name}</option>)}</select></label>
+    <label>Waste category<select value={newCategory} onChange={e=>{const value=e.target.value as typeof newCategory;setNewCategory(value);setCause(value==='Spoilage'?'Expired or spoiled':value==='Overproduction'?'Overproduction':value==='Prepared Food'?'Plate returns':'Other');}}>{categories.map(option=><option key={option}>{option}</option>)}</select></label>
+    <label>Quantity (kg)<input type="number" min="0.1" step="0.1" value={quantity} onChange={e=>setQuantity(e.target.value)} required/></label>
+    <label>Cause<input value={cause} onChange={e=>setCause(e.target.value)} placeholder="e.g. overproduction" maxLength={120} required/></label>
+    <button className="waste-submit-button" type="submit"><span>＋</span> Record waste</button>
+   </form>
+   <p className="waste-form-footnote">The cost is an estimate from the demo logic, not an audited food-cost calculation.</p>
+  </section>
+  <section className="panel data-panel waste-records-panel">
+   <div className="waste-panel-heading waste-records-heading"><div><span className="waste-kicker">AUDIT TRAIL</span><h2>Waste records</h2><p>Search and filter the waste events currently stored in this demo.</p></div><button className="waste-export-button" onClick={exportCsv}><span>↓</span> Export CSV</button></div>
+   <div className="waste-table-controls"><label className="waste-search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search dishes or causes..." aria-label="Search waste records"/></label><label className="waste-category-filter">Category<select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option>{categories.map(option=><option key={option}>{option}</option>)}</select></label></div>
+   <div className="table-wrap waste-table-wrap"><table className="waste-table"><thead><tr><th>Dish</th><th>Category</th><th>Quantity</th><th>Est. cost</th><th>Date & time</th><th>Cause</th><th>Quick action</th></tr></thead><tbody>{records.map(w=><tr key={w.id}><td><strong>{state.dishes.find(d=>d.id===w.dishId)?.name||w.dishId}</strong></td><td><span className={'waste-category-pill waste-pill-'+categories.indexOf(w.category)}>{w.category}</span></td><td><strong>{w.wasteKg.toFixed(1)} {w.unit}</strong></td><td>₹{Math.round(w.wasteCost).toLocaleString('en-IN')}</td><td>{formatDate(w.date)}</td><td>{w.cause}</td><td><button className="waste-row-action" onClick={()=>{dispatch({type:'record-waste',dishId:w.dishId,wasteKg:0.5,category:w.category,cause:'Additional event: '+w.cause});setNotice('Added another 0.5 kg waste event for '+(state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId)+'.');}}>＋ 0.5 kg</button></td></tr>)}</tbody></table>{records.length===0&&<div className="waste-empty waste-table-empty"><strong>No matching records</strong><p>Try another search or category filter.</p></div>}</div>
+   <div className="waste-table-footer"><span>{records.length} of {state.waste.length} records</span><span>Demo state · local only</span></div>
+  </section>
+ </PageFrame>
+}
 export function AnalyticsPage(){const {state}=usePlateIQ();const metrics=getAnalyticsMetrics(state);return <PageFrame title="Analytics" subtitle="See how operational decisions compound over time."><div className="metrics-grid"><Kpi label="Forecast accuracy" value={`${metrics.forecastAccuracy.toFixed(1)}%`} detail="current forecast confidence"/><Kpi label="Waste reduction" value={metrics.wasteReductionPct===null?'—':`${metrics.wasteReductionPct.toFixed(1)}%`} detail={metrics.wasteReductionPct===null?'Baseline unavailable':'derived baseline comparison'}/><Kpi label="Preparation efficiency" value={`${metrics.preparationEfficiency.toFixed(1)}%`} detail="prepared versus forecast"/><Kpi label="Stockout rate" value={`${metrics.stockoutRate.toFixed(1)}%`} detail="projected stockout items"/><Kpi label="Food cost savings" value={metrics.savings===null?'—':`₹${metrics.savings.toLocaleString('en-IN')}`} detail={metrics.savings===null?'Baseline unavailable':'derived baseline comparison'}/></div><div className="dashboard-grid"><section className="panel"><div className="section-kicker">Current forecast confidence</div><div className="analytics-bars"><span style={{height:`${metrics.forecastAccuracy}%`}}/></div></section><section className="panel"><div className="section-kicker"><Sparkles/> Derived insights</div><div className="setting-row">Prepared quantity <strong>{metrics.preparationEfficiency.toFixed(1)}% of forecast</strong></div><div className="setting-row">Projected stockout rate <strong>{metrics.stockoutRate.toFixed(1)}%</strong></div><div className="setting-row">Waste baseline <strong>{metrics.wasteReductionPct===null?'unavailable':'available'}</strong></div></section></div></PageFrame>}
