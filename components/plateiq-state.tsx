@@ -1,17 +1,21 @@
-'use client'
+'use client';
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
 import type React from 'react'
 import type { BatchStatus, OperationalEvent, PlateIQAction, PlateIQState, Severity } from '@/lib/types'
 import { restaurant, dishes, inventory, stations, alerts, scenario, waste } from '@/lib/mock-data'
-import { getDemoMetrics, isDemandSurge } from '@/lib/demo-engine'
 import { buildForecast } from '@/lib/forecasting'
 import { adjustStock, consumeForBatch, deriveInventoryState, markOrdered, receiveStock } from '@/lib/inventory-engine'
 import { getForecastMetrics, getRestaurantMetrics, isValidPersistedState, simulateScenario } from '@/lib/selectors'
 import { wasteSummary } from '@/lib/waste-engine'
 
 const now = '2025-06-24T12:45:00+05:30'
-const initialDemoMetrics = getDemoMetrics(0)
-const initialDishes = dishes.map(dish => dish.id === 'biryani' ? { ...dish, actualOrders: initialDemoMetrics.orders } : dish)
+const initialBiryani = dishes.find(dish => dish.id === 'biryani')
+const initialOrders = initialBiryani?.actualOrders ?? 0
+const initialOrdersPerMinute = Number((initialOrders / 6).toFixed(1))
+const initialKitchenCapacity = stations.length ? Math.round(stations.reduce((sum, station) => sum + station.capacity, 0) / stations.length) : 0
+const initialStatus: PlateIQState['demo']['status'] = 'Monitoring'
+const initialDemoMetrics = { orders: initialOrders, ordersPerMinute: initialOrdersPerMinute, kitchenCapacity: initialKitchenCapacity, status: initialStatus }
+const initialDishes = dishes
 const initialInventory = inventory.map(item => deriveInventoryState(item))
 const initialForecasts = initialDishes.map(dish => ({
   id: `forecast-${dish.id}`,
@@ -57,20 +61,16 @@ export const initialState: PlateIQState = {
   metrics: { demand: initialForecasts.reduce((sum, forecast) => sum + forecast.forecast, 0), prepared: initialPrepared, wasteKg: initialWaste.wasteKg, wasteCost: initialWaste.wasteCost, forecastAccuracy: initialForecasts.reduce((sum, forecast) => sum + forecast.confidence, 0) / initialForecasts.length, savings: initialWaste.potentialSavings ?? 0 },
 }
 
-function simulatedClock(iso: string) {
-  return new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }).format(new Date(iso))
-}
-
-function advanceClock(iso: string) {
-  return new Date(new Date(iso).getTime() + 15 * 60 * 1000).toISOString()
+function currentOperationalTime() {
+  return new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }).format(new Date())
 }
 
 function createEvent(state: PlateIQState, type: string, title: string, description: string, href = '/app', severity: Severity = 'info'): OperationalEvent {
-  return { id: `event-${state.events.length + 1}`, timestamp: simulatedClock(state.demo.simulatedTime), type, title, description, severity, relatedEntity: href }
+  return { id: `event-${state.events.length + 1}`, timestamp: currentOperationalTime(), type, title, description, severity, relatedEntity: href }
 }
 
 function createNotification(state: PlateIQState, title: string, description: string, href: string) {
-  return { id: `notification-${state.notifications.length + 1}-${state.events.length + 1}`, title, description, href, read: false, createdAt: state.demo.simulatedTime }
+  return { id: `notification-${state.notifications.length + 1}-${state.events.length + 1}`, title, description, href, read: false, createdAt: new Date().toISOString() }
 }
 
 function stationForDish(category: string) {
@@ -139,32 +139,9 @@ function advanceBatch(state: PlateIQState, batchId: string, requestedStatus?: Ba
   return syncState(nextState)
 }
 
-function resetDemo(state: PlateIQState): PlateIQState {
-  const biryani = state.dishes.find(dish => dish.id === 'biryani')
-  const demoMetrics = getDemoMetrics(0, state.demo.baselineVelocity)
-  const biryaniRecord = state.forecasts.find(item => item.dishId === 'biryani')
-  const forecast = biryani ? buildForecast(biryani, demoMetrics.orders, state.scenario, state.demo.kitchenCapacity, biryaniRecord?.baseline) : null
-  const forecasts = forecast ? state.forecasts.map(item => item.dishId === 'biryani' ? { ...item, forecast: forecast.forecast, lowerBound: forecast.lowerBound, upperBound: forecast.upperBound, confidence: forecast.confidence, actual: demoMetrics.orders, projectedDemand: forecast.projectedDemand, recommendedPreparation: forecast.recommendedPreparation } : item) : state.forecasts
-  const recommendedBatch = state.batches.find(batch => batch.dishId === 'biryani' && batch.status === 'Recommended')
-  const recommendations = state.recommendations.filter(recommendation => recommendation.dishId !== 'biryani')
-  if (recommendedBatch && forecast) recommendations.push({ id: 'rec-1', title: `Start preparation batch #${recommendedBatch.number} +${recommendedBatch.quantity}`, description: 'Biryani is tracking above the current preparation plan.', actionLabel: `Start Batch #${recommendedBatch.number}`, confidence: forecast.confidence, dishId: 'biryani' })
-  return syncState({
-    ...state,
-    forecasts,
-    recommendations,
-    alerts: state.alerts.filter(alert => alert.id !== 'surge-live'),
-    events: state.events.filter(event => !['FORECAST_UPDATED', 'SURGE_DETECTED', 'BATCH_RECOMMENDED'].includes(event.type)),
-    notifications: state.notifications.filter(notification => !notification.title.toLowerCase().includes('surge')),
-    demo: { ...state.demo, ...demoMetrics, step: 0, prepared: state.demo.prepared, forecast: forecast?.forecast ?? state.demo.forecast, lowerBound: forecast?.lowerBound ?? state.demo.lowerBound, upperBound: forecast?.upperBound ?? state.demo.upperBound, confidence: forecast?.confidence ?? state.demo.confidence, projectedDemand: forecast?.projectedDemand ?? state.demo.projectedDemand, running: false, simulatedTime: '2025-06-24T11:00:00+05:30' },
-  })
-}
-
 export function reducer(state: PlateIQState, action: PlateIQAction): PlateIQState {
   switch (action.type) {
     case 'hydrate': return isValidPersistedState(action.state) ? syncState(action.state) : initialState
-    case 'toggle': return { ...state, demo: { ...state.demo, running: !state.demo.running } }
-    case 'speed': return { ...state, demo: { ...state.demo, speed: action.value } }
-    case 'reset': return resetDemo(state)
     case 'reset-scenario': return { ...state, scenario, demo: { ...state.demo, scenario }, events: [createEvent(state, 'SCENARIO_RESET', 'Scenario reset', 'What-If inputs returned to the base scenario.', '/app/what-if'), ...state.events] }
     case 'reset-data': return initialState
     case 'reason': return { ...state, demo: { ...state.demo, showReason: action.value } }
@@ -213,32 +190,12 @@ export function reducer(state: PlateIQState, action: PlateIQAction): PlateIQStat
     case 'record-waste': {
       const dish = state.dishes.find(candidate => candidate.id === action.dishId)
       if (!dish || action.wasteKg <= 0) return state
-      const record = { id: `waste-${state.waste.length + 1}`, dishId: dish.id, prepared: dish.prepared, consumed: dish.actualOrders, spoilageKg: action.category === 'Spoilage' ? action.wasteKg : 0, overproductionKg: action.category === 'Overproduction' ? action.wasteKg / 0.045 : 0, wasteKg: Number(action.wasteKg.toFixed(1)), wasteCost: Math.round(action.wasteKg * 150), unit: 'kg' as const, category: action.category, cause: action.cause, date: state.demo.simulatedTime }
+      const record = { id: `waste-${state.waste.length + 1}`, dishId: dish.id, prepared: dish.prepared, consumed: dish.actualOrders, spoilageKg: action.category === 'Spoilage' ? action.wasteKg : 0, overproductionKg: action.category === 'Overproduction' ? action.wasteKg / 0.045 : 0, wasteKg: Number(action.wasteKg.toFixed(1)), wasteCost: Math.round(action.wasteKg * 150), unit: 'kg' as const, category: action.category, cause: action.cause, date: new Date().toISOString() }
       const summary = wasteSummary([record, ...state.waste])
       return { ...state, waste: [record, ...state.waste], metrics: { ...state.metrics, wasteKg: summary.wasteKg, wasteCost: summary.wasteCost, savings: summary.potentialSavings ?? 0 }, events: [createEvent(state, 'WASTE_RECORDED', `${dish.name} waste recorded`, `${record.wasteKg.toFixed(1)} kg recorded as ${record.category}.`, '/app/waste-intelligence'), ...state.events], notifications: [createNotification(state, 'Waste recorded', `${dish.name}: ${record.wasteKg.toFixed(1)} kg.`, '/app/waste-intelligence'), ...state.notifications] }
     }
     case 'batch': return advanceBatch(state, action.batchId ?? state.demo.batch.id)
     case 'batch-status': return advanceBatch(state, action.batchId, action.status)
-    case 'tick': {
-      const step = Math.min(8, state.demo.step + 1)
-      const demoMetrics = getDemoMetrics(step, state.demo.baselineVelocity)
-      const biryani = state.dishes.find(dish => dish.id === 'biryani')
-      if (!biryani) return state
-      const biryaniRecord = state.forecasts.find(item => item.dishId === 'biryani')
-      const forecast = buildForecast(biryani, demoMetrics.orders, state.scenario, demoMetrics.kitchenCapacity, biryaniRecord?.baseline)
-      const forecasts = state.forecasts.map(item => item.dishId === biryani.id ? { ...item, forecast: forecast.forecast, lowerBound: forecast.lowerBound, upperBound: forecast.upperBound, confidence: forecast.confidence, actual: demoMetrics.orders, projectedDemand: forecast.projectedDemand, recommendedPreparation: forecast.recommendedPreparation } : item)
-      const enteredSurge = isDemandSurge(demoMetrics.ordersPerMinute, state.demo.baselineVelocity) && state.demo.status !== 'Surge'
-      const needsBatch = forecast.recommendedPreparation > 0 || forecast.projectedDemand > state.demo.prepared || demoMetrics.kitchenCapacity >= 90
-      const recommendedBatch = state.batches.find(batch => batch.dishId === biryani.id && batch.status === 'Recommended')
-      const recommendation = recommendedBatch && needsBatch ? { id: 'rec-1', title: `Start preparation batch #${recommendedBatch.number} +${recommendedBatch.quantity}`, description: `${biryani.name} is tracking above the current preparation plan.`, actionLabel: `Start Batch #${recommendedBatch.number}`, confidence: forecast.confidence, dishId: biryani.id } : null
-      const nextRecommendations = recommendation ? [...state.recommendations.filter(item => item.dishId !== biryani.id), recommendation] : state.recommendations
-      const nextAlerts = enteredSurge ? [...state.alerts, { id: 'surge-live', title: 'Demand Surge Detected', description: 'Chicken Biryani demand is accelerating. Start preparation batch #2.', severity: 'warning' as const, dismissed: false, relatedEntity: 'biryani' }] : state.alerts
-      const forecastEvent = createEvent(state, 'FORECAST_UPDATED', 'Forecast recalculated', `Projected demand updated to ${forecast.projectedDemand} plates.`, '/app/demand-forecast')
-      const surgeEvent = enteredSurge ? createEvent(state, 'SURGE_DETECTED', 'Demand surge detected', 'Order velocity crossed the live surge threshold.', '/app/live-operations', 'warning') : null
-      const recommendationEvent = enteredSurge && recommendation ? createEvent(state, 'BATCH_RECOMMENDED', recommendation.title, 'The next batch recommendation was refreshed from the live forecast.', '/app/kitchen-planner') : null
-      const nextState = { ...state, forecasts, recommendations: nextRecommendations, alerts: nextAlerts, events: [forecastEvent, ...(surgeEvent ? [surgeEvent] : []), ...(recommendationEvent ? [recommendationEvent] : []), ...state.events], notifications: enteredSurge ? [createNotification(state, 'Demand surge detected', 'PlateIQ recommends starting the next biryani batch.', '/app'), ...state.notifications] : state.notifications, demo: { ...state.demo, ...demoMetrics, prepared: state.demo.prepared, running: step < 8 && state.demo.running, status: demoMetrics.status as PlateIQState['demo']['status'], step, forecast: forecast.forecast, lowerBound: forecast.lowerBound, upperBound: forecast.upperBound, confidence: forecast.confidence, projectedDemand: forecast.projectedDemand, simulatedTime: advanceClock(state.demo.simulatedTime) }, }
-      return syncState(nextState)
-    }
     default: return state
   }
 }
@@ -247,11 +204,6 @@ const Ctx = createContext<{ state: PlateIQState; dispatch: React.Dispatch<PlateI
 
 export function PlateIQProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState)
-  useEffect(() => {
-    if (!state.demo.running || state.demo.step >= 8) return
-    const timer = window.setInterval(() => dispatch({ type: 'tick' }), Math.max(700, 2200 / state.demo.speed))
-    return () => window.clearInterval(timer)
-  }, [state.demo.running, state.demo.step, state.demo.speed])
   useEffect(() => {
     try {
       const saved = localStorage.getItem('plateiq-state')
