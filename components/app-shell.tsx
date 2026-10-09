@@ -122,12 +122,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button className="mobile-close" onClick={() => setOpen(false)} aria-label="Close menu"><X /></button>
         </div>
 
-        <div className="restaurant-switch">
-          <div className="restaurant-avatar">JH</div>
-          <div><strong>Jubilee Hills</strong><small>Hyderabad, India</small></div>
-          <ChevronDown />
-        </div>
-
         <div className="sidebar-section-label">WORKSPACE</div>
         <nav className="primary-navigation">
           {navItems.map(([label, href]) => {
