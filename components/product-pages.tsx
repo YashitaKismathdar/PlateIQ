@@ -111,23 +111,74 @@ function Simulator({change,setChange}:{change:number;setChange:(value:number)=>v
 function Copilot() {
   const {state,dispatch}=usePlateIQ();
   const context=getCopilotContext(state);
-  return <div className="dashboard-grid">
-    <section className="panel">
-      <div className="section-kicker"><Sparkles/> PlateIQ Copilot</div>
-      <h2>Kitchen intelligence, grounded in live operational data.</h2>
-      <p className="muted-copy">Recommendations update from demand forecasts, prep batches, inventory availability, and waste records.</p>
-      <div className="setting-row"><span>Current orders</span><strong>{context.orders.toLocaleString('en-IN')}</strong></div>
-      <div className="setting-row"><span>Projected demand</span><strong>{context.forecast?.projectedDemand??0} plates</strong></div>
-      <div className="setting-row"><span>Forecast confidence</span><strong>{context.forecast?.confidence??0}%</strong></div>
-      <div className="setting-row"><span>Recommended preparation</span><strong>{context.recommendedQuantity} plates</strong></div>
-      <div className="setting-row"><span>Waste recorded</span><strong>{context.waste.wasteKg.toFixed(1)} kg</strong></div>
-      <div className="setting-row"><span>Scenario</span><strong>{context.surge?'Demand surge':state.demo.status}</strong></div>
-    </section>
-    <section className="panel">
-      <div className="section-kicker"><Zap/> Recommended next actions</div>
-      {state.recommendations.length?state.recommendations.map(item=><article className="setting-row" key={item.id}><div><strong>{item.title}</strong><p className="muted-copy">{item.description}</p><small>{item.confidence}% confidence</small></div>{item.dishId&&state.batches.find(batch=>batch.dishId===item.dishId&&batch.status!=='Completed')&&<button className="text-button" onClick={()=>dispatch({type:'batch',batchId:state.batches.find(batch=>batch.dishId===item.dishId&&batch.status!=='Completed')!.id})}>{item.actionLabel??'Advance batch'}</button>}</article>):<p className="muted-copy">No active recommendations. Keep monitoring demand and stock levels.</p>}
-      <div className="section-kicker"><Activity/> Recent operational events</div>
-      {state.events.slice(0,5).map(event=><div className="setting-row" key={event.id}><div><strong>{event.title}</strong><p className="muted-copy">{event.description}</p></div><small>{event.timestamp}</small></div>)}
-    </section>
+  const [prompt,setPrompt]=useState('');
+  const [messages,setMessages]=useState<{role:'user'|'assistant';text:string}[]>([]);
+  const [notice,setNotice]=useState('');
+  const lowStock=state.inventory.filter(item=>item.status==='Low'||item.status==='Critical');
+  const activeBatches=state.batches.filter(batch=>batch.status!=='Completed');
+  const topWaste=[...state.waste].sort((a,b)=>b.wasteKg-a.wasteKg).slice(0,2);
+  const answerQuestion=(raw:string)=>{
+    const question=raw.trim();
+    if(!question)return;
+    const q=question.toLowerCase();
+    let answer='';
+    if(/stock|ingredient|reorder|inventory|shortage|supplier/.test(q)){
+      answer=lowStock.length
+        ? 'Inventory needs attention: '+lowStock.slice(0,4).map(item=>item.name+' ('+item.status+', '+item.currentStock+' '+item.unit+' left; about '+item.daysLeft.toFixed(1)+' days of coverage)').join('; ')+'. Review the Inventory page before committing to additional prep.'
+        : 'No ingredients are currently marked Low or Critical in this demo inventory. Check the stock register before placing orders.';
+    }else if(/waste|wasted|surplus|spoil/.test(q)){
+      answer=topWaste.length
+        ? 'Recorded waste is '+context.waste.wasteKg.toFixed(1)+' kg (estimated cost ₹'+Math.round(context.waste.wasteCost).toLocaleString('en-IN')+'). Largest recorded contributors: '+topWaste.map(item=>(state.dishes.find(d=>d.id===item.dishId)?.name??item.dishId)+' ('+item.wasteKg.toFixed(1)+' kg)').join(', ')+'. These are recorded demo entries, not a live waste sensor feed.'
+        : 'There are no waste entries in the current demo state. Record waste on the Waste Management page to start identifying repeat causes.';
+    }else if(/prep|cook|batch|make|prepare|dish|menu|demand|orders/.test(q)){
+      const forecast=context.forecast;
+      answer=(context.dish?.name??'The selected dish')+': current demo orders are '+context.orders+' plates; projected demand is '+(forecast?.projectedDemand??0)+' plates (forecast range '+(forecast?.lowerBound??0)+'–'+(forecast?.upperBound??0)+', '+(forecast?.confidence??0)+'% confidence). Suggested preparation is '+context.recommendedQuantity+' plates. '+(context.batch?'Next batch status: '+context.batch.status+'. ':'')+(context.batchImpact?.shortages?.length?'Check ingredients first: '+context.batchImpact.shortages.map(item=>item.name).join(', ')+'.':'No ingredient shortage is flagged for this suggested quantity by the current demo model.')+' Treat this as a planning aid, not a guarantee.';
+    }else if(/event|weather|rain|holiday|external|traffic/.test(q)){
+      answer='External conditions are not connected to a live weather or events feed yet. Open External Factors to adjust the available scenario inputs, then review the projected demand, stockout risk, and waste estimate before applying a preparation plan.';
+    }else{
+      answer='Here is the current service snapshot: '+context.orders+' demo orders so far; projected demand '+(context.forecast?.projectedDemand??0)+' plates with '+(context.forecast?.confidence??0)+'% forecast confidence; suggested preparation '+context.recommendedQuantity+' plates; '+lowStock.length+' ingredients marked Low or Critical; and '+context.waste.wasteKg.toFixed(1)+' kg of recorded waste. Ask about preparation, inventory risks, waste, or external conditions for a focused breakdown.';
+    }
+    setMessages(current=>[...current,{role:'user',text:question},{role:'assistant',text:answer}]);
+    setPrompt('');
+    setNotice('Answer generated from the current local demo data.');
+  };
+  return <div className="copilot-workspace">
+    <div className="copilot-demo-notice"><span className="copilot-demo-pulse"/> DEMO COPILOT <span>Answers are generated from PlateIQ's local demo state. No live AI model or external data feed is connected.</span></div>
+    <div className="copilot-hero">
+      <div className="copilot-hero-copy"><span className="copilot-overline"><Sparkles size={14}/> KITCHEN DECISION SUPPORT</span><h2>Good service starts with<br/><em>the right next question.</em></h2><p>Explore demand, preparation, stock pressure, and recorded waste in one place.</p></div>
+      <div className="copilot-hero-stat"><span>Forecast confidence</span><strong>{context.forecast?.confidence??0}<small>%</small></strong><small>Current demo forecast</small></div>
+    </div>
+    <div className="copilot-content-grid">
+      <section className="panel copilot-chat-panel">
+        <div className="copilot-panel-heading"><div className="copilot-assistant-mark"><Sparkles size={18}/></div><div><h3>Ask PlateIQ</h3><p>Operational answers based on current workspace data</p></div><span className="copilot-mode-pill">LOCAL DEMO</span></div>
+        <div className="copilot-chat-body" aria-live="polite">
+          <div className="copilot-message assistant"><span className="copilot-message-avatar"><Sparkles size={14}/></span><div><strong>PlateIQ assistant</strong><p>Hi! I can help you interpret this service snapshot. Ask what to prepare next, which ingredients need attention, or where recorded waste is coming from.</p><small>Uses current demo state</small></div></div>
+          {messages.map((message,index)=><div className={'copilot-message '+message.role} key={index}>{message.role==='assistant'&&<span className="copilot-message-avatar"><Sparkles size={14}/></span>}<div>{message.role==='assistant'&&<strong>PlateIQ assistant</strong>}<p>{message.text}</p>{message.role==='assistant'&&<small>Derived from local demo data</small>}</div></div>)}
+        </div>
+        <div className="copilot-prompt-area">
+          <div className="copilot-suggestion-list">{['What should we prepare next?','Which ingredients are at risk?','Where is waste highest?','How could weather affect service?'].map(item=><button type="button" key={item} onClick={()=>answerQuestion(item)}>{item}<ArrowRight size={13}/></button>)}</div>
+          <form className="copilot-prompt-form" onSubmit={event=>{event.preventDefault();answerQuestion(prompt)}}><label className="copilot-sr-only" htmlFor="copilot-question">Ask PlateIQ a question</label><input id="copilot-question" value={prompt} onChange={event=>setPrompt(event.target.value)} placeholder="Ask about prep, stock, waste, or demand…" maxLength={500}/><button type="submit" disabled={!prompt.trim()} aria-label="Send question"><ArrowRight size={17}/></button></form>
+          {notice&&<p className="copilot-feedback" role="status">{notice}</p>}
+        </div>
+      </section>
+      <aside className="copilot-side-column">
+        <section className="panel copilot-context-panel"><div className="copilot-side-heading"><span className="copilot-side-icon"><Activity size={16}/></span><div><h3>Service snapshot</h3><p>Current shared demo state</p></div></div>
+          <div className="copilot-context-row"><span>Current orders</span><strong>{context.orders.toLocaleString('en-IN')} plates</strong></div>
+          <div className="copilot-context-row"><span>Projected demand</span><strong>{context.forecast?.projectedDemand??0} plates</strong></div>
+          <div className="copilot-context-row"><span>Suggested preparation</span><strong>{context.recommendedQuantity} plates</strong></div>
+          <div className="copilot-context-row"><span>Recorded waste</span><strong>{context.waste.wasteKg.toFixed(1)} kg</strong></div>
+          <div className="copilot-context-row"><span>Stock alerts</span><strong className={lowStock.length?'copilot-value-warn':''}>{lowStock.length} ingredients</strong></div>
+          <div className="copilot-context-row"><span>Service status</span><strong>{context.surge?'Demand surge':state.demo.status}</strong></div>
+          <Link className="copilot-inline-link" href="/app/demand-forecast">Review demand forecast <ArrowUpRight size={14}/></Link>
+        </section>
+        <section className="panel copilot-actions-panel"><div className="copilot-side-heading"><span className="copilot-side-icon"><Zap size={16}/></span><div><h3>Recommended actions</h3><p>Based on current operational signals</p></div></div>
+          {lowStock.length>0&&<div className="copilot-action-card"><span className="copilot-action-priority">CHECK STOCK</span><strong>{lowStock.length} ingredients need review</strong><p>{lowStock.slice(0,3).map(item=>item.name).join(', ')}{lowStock.length>3?' and more':''}</p><Link href="/app/inventory">Open inventory <ArrowRight size={13}/></Link></div>}
+          {context.recommendedQuantity>0&&<div className="copilot-action-card"><span className="copilot-action-priority copilot-priority-green">PREPARATION</span><strong>Review the next batch</strong><p>{context.dish?.name??'Menu item'} · suggested {context.recommendedQuantity} plates.</p>{context.batch&&<button type="button" onClick={()=>{dispatch({type:'batch',batchId:context.batch!.id});setNotice('Batch action sent to the shared local demo state.')}} disabled={!context.batch||context.batch.status==='Completed'}>{context.batch?.status==='Recommended'?'Start recommended batch':context.batch?.status==='In Preparation'?'Advance preparation batch':'No active batch'} <ArrowRight size={13}/></button>}<Link href="/app/kitchen-planner">Open kitchen planner <ArrowUpRight size={13}/></Link></div>}
+          {topWaste.length>0&&<div className="copilot-action-card"><span className="copilot-action-priority">WASTE WATCH</span><strong>Review recorded waste</strong><p>{topWaste.map(item=>state.dishes.find(d=>d.id===item.dishId)?.name??item.dishId).join(', ')}</p><Link href="/app/waste-intelligence">Open waste management <ArrowRight size={13}/></Link></div>}
+          {lowStock.length===0&&context.recommendedQuantity<=0&&topWaste.length===0&&<p className="muted-copy">No priority action is currently surfaced by the demo data.</p>}
+        </section>
+        <section className="copilot-limits-note"><CircleHelp size={15}/><p>Copilot is a frontend demo right now. Connect a backend AI service and verified live data to enable open-ended AI responses.</p></section>
+      </aside>
+    </div>
   </div>
 }
