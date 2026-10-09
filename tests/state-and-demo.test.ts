@@ -30,7 +30,12 @@ describe('batch lifecycle and application state', () => {
     expect(result.inventory).toEqual(initialState.inventory)
     expect(result.waste).toEqual(initialState.waste)
     expect(result.demo.prepared).toBe(initialState.demo.prepared)
-    expect(result.batches.some((batch, index) => batch.quantity !== initialState.batches[index].quantity)).toBe(true)
+    for (const batch of result.batches.filter(item => item.status === 'Recommended')) {
+      const forecast = result.forecasts.find(item => item.dishId === batch.dishId)
+      if (forecast && forecast.recommendedPreparation > 0) {
+        expect(batch.quantity).toBe(forecast.recommendedPreparation)
+      }
+    }
     expect(result.events[0].type).toBe('PLAN_APPLIED')
   })
 })
