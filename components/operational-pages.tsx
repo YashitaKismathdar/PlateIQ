@@ -73,7 +73,6 @@ export function WasteIntelligencePage(){
  const categories=['Prepared Food','Spoilage','Overproduction','Other'] as const;
  const records=state.waste.filter(w=>(category==='All'||w.category===category)&&((state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId).toLowerCase().includes(query.trim().toLowerCase())||w.cause.toLowerCase().includes(query.trim().toLowerCase())));
  const topDishes=Object.entries(summary.byDish).sort((a,b)=>b[1].wasteKg-a[1].wasteKg).slice(0,5);
- const categoryTotal=Object.values(summary.byCategory).reduce((sum,item)=>sum+item.wasteKg,0);
  const exportCsv=()=>{
   const header=['Dish','Category','Waste kg','Waste cost INR','Date','Cause'];
   const lines=state.waste.map(w=>[state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId,w.category,w.wasteKg,w.wasteCost,w.date,w.cause]);
