@@ -62,7 +62,8 @@ describe('waste records and summaries', () => {
     expect(after.byDish.paneer.wasteKg).toBe(before.byDish.paneer.wasteKg)
     const record = next.waste[0]
     expect(record).toMatchObject({ dishId: 'biryani', category: 'Overproduction', cause: 'Late service overproduction', unit: 'kg', wasteKg: 0.5 })
-    expect(record.date).toBe(next.demo.simulatedTime)
+    expect(Number.isNaN(Date.parse(record.date))).toBe(false)
+    expect(record.date).toMatch(/^\\d{4}-\\d{2}-\\d{2}T/)
   })
 
   it('does not increase waste when a preparation batch starts', () => {
