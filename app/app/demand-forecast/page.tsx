@@ -79,11 +79,11 @@ export default function DemandForecastPage() {
 
   function applyRecommendations() {
     dispatch({ type: 'apply-plan' })
-    setNotice('Forecast plan recalculated with the current scenario and saved to the shared demo workspace.')
+    setNotice('Demo preparation plan recalculated. Changes are stored in this browser, not a shared live workspace.')
   }
 
   function resetView() {
-    setRange('7 days')
+    setRange('All dishes')
     setQuery('')
     setRiskFilter('All items')
     setNotice('Forecast filters reset. Shared kitchen data was not changed.')
@@ -99,8 +99,11 @@ export default function DemandForecastPage() {
     const link = document.createElement('a')
     link.href = url
     link.download = 'plateiq-demand-forecast.csv'
+    document.body.appendChild(link)
     link.click()
-    URL.revokeObjectURL(url)
+    link.remove()
+    // Keep the object URL alive briefly so the browser can begin the download.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
     setNotice('Forecast CSV exported for the currently visible dishes.')
   }
 
