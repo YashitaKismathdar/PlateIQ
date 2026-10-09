@@ -70,6 +70,24 @@ export default function DemandForecastPage() {
     return matchesQuery && matchesRisk
   }), [items, query, riskFilter])
 
+  const chartDays = range === '7 days' ? days : range === '14 days' ? [
+    { day: 'Oct 9–10', date: 'Days 1–2', demand: 464, actual: 204 },
+    { day: 'Oct 11–12', date: 'Days 3–4', demand: 460, actual: null },
+    { day: 'Oct 13–14', date: 'Days 5–6', demand: 417, actual: null },
+    { day: 'Oct 15–16', date: 'Days 7–8', demand: 448, actual: null },
+    { day: 'Oct 17–18', date: 'Days 9–10', demand: 506, actual: null },
+    { day: 'Oct 19–20', date: 'Days 11–12', demand: 402, actual: null },
+    { day: 'Oct 21–22', date: 'Days 13–14', demand: 436, actual: null },
+  ] : [
+    { day: 'Week 1', date: 'Oct 9–15', demand: 1565, actual: 204 },
+    { day: 'Week 2', date: 'Oct 16–22', demand: 1620, actual: null },
+    { day: 'Week 3', date: 'Oct 23–29', demand: 1690, actual: null },
+    { day: 'Week 4', date: 'Oct 30–Nov 5', demand: 1735, actual: null },
+    { day: 'Week 5', date: 'Nov 6–12', demand: 1680, actual: null },
+    { day: 'Week 6', date: 'Nov 13–19', demand: 1770, actual: null },
+    { day: 'Week 7', date: 'Nov 20–26', demand: 1810, actual: null },
+  ]
+  const chartScale = range === '7 days' ? 280 : range === '14 days' ? 550 : 1900
   const totalDemand = items.reduce((sum, item) => sum + item.forecast, 0)
   const totalPrep = items.reduce((sum, item) => sum + item.cooked, 0)
   const excess = items.reduce((sum, item) => sum + Math.max(0, item.cooked - item.forecast), 0)
@@ -163,20 +181,20 @@ export default function DemandForecastPage() {
             </div>
           </div>
           <div className="forecast-chart-legend"><span><i className="legend-forecast" /> Forecast demand</span><span><i className="legend-actual" /> Recorded sales</span></div>
-          <div className="forecast-chart" role="img" aria-label="Bar chart showing expected portions for the next seven days">
-            {days.slice(0, range === '7 days' ? 7 : range === '14 days' ? 7 : 7).map((day, index) => (
+          <div className="forecast-chart" role="img" aria-label={"Bar chart showing expected demand for " + range}>
+            {chartDays.map((day, index) => (
               <div className="forecast-chart-column" key={day.date}>
                 <div className="forecast-chart-values"><span>{day.demand}</span>{day.actual !== null && <small>{day.actual}</small>}</div>
                 <div className="forecast-bars">
-                  <div className="forecast-bar forecast-bar-demand" style={{ height: (day.demand / 280 * 100) + '%' }} />
-                  {day.actual !== null && <div className="forecast-bar forecast-bar-actual" style={{ height: (day.actual / 280 * 100) + '%' }} />}
+                  <div className="forecast-bar forecast-bar-demand" style={{ height: (day.demand / chartScale * 100) + '%' }} />
+                  {day.actual !== null && <div className="forecast-bar forecast-bar-actual" style={{ height: (day.actual / chartScale * 100) + '%' }} />}
                 </div>
                 <strong>{day.day}</strong><small>{day.date}</small>
                 {index === 2 && <span className="forecast-peak-tag">Peak</span>}
               </div>
             ))}
           </div>
-          <div className="forecast-chart-note"><TrendingUp size={16} /><span><strong>Weekend demand is trending higher.</strong> Prepare extra portions for Saturday and Sunday, then scale back for Monday.</span></div>
+          <div className="forecast-chart-note"><TrendingUp size={16} /><span><strong>Demand is trending higher in the selected outlook.</strong> Review prep quantities against recent sales and adjust for upcoming service conditions.</span></div>
         </section>
 
         <section className="forecast-panel">
