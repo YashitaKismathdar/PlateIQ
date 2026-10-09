@@ -435,3 +435,21 @@ input, select { accent-color: var(--emerald); }
     max-width: 100%;
   }
 }
+
+
+/* Navbar: make the AI marker a small badge, not a long green rectangle. */
+.app-shell > .sidebar .primary-navigation .nav-item .new-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  margin-left: auto;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 8px;
+  line-height: 1;
+}
