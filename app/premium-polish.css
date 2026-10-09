@@ -453,3 +453,22 @@ input, select { accent-color: var(--emerald); }
   font-size: 8px;
   line-height: 1;
 }
+
+
+/* Navbar: keep the LIVE marker beside Live Operations compact as well. */
+.app-shell > .sidebar .primary-navigation .nav-item .live-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  height: 18px;
+  box-sizing: border-box;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 8px;
+  line-height: 1;
+  white-space: nowrap;
+}
