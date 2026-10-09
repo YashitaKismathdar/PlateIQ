@@ -129,4 +129,64 @@ export function WasteIntelligencePage(){
   </section>
  </PageFrame>
 }
-export function AnalyticsPage(){const {state}=usePlateIQ();const metrics=getAnalyticsMetrics(state);return <PageFrame title="Analytics" subtitle="See how operational decisions compound over time."><div className="metrics-grid"><Kpi label="Forecast accuracy" value={`${metrics.forecastAccuracy.toFixed(1)}%`} detail="current forecast confidence"/><Kpi label="Waste reduction" value={metrics.wasteReductionPct===null?'—':`${metrics.wasteReductionPct.toFixed(1)}%`} detail={metrics.wasteReductionPct===null?'Baseline unavailable':'derived baseline comparison'}/><Kpi label="Preparation efficiency" value={`${metrics.preparationEfficiency.toFixed(1)}%`} detail="prepared versus forecast"/><Kpi label="Stockout rate" value={`${metrics.stockoutRate.toFixed(1)}%`} detail="projected stockout items"/><Kpi label="Food cost savings" value={metrics.savings===null?'—':`₹${metrics.savings.toLocaleString('en-IN')}`} detail={metrics.savings===null?'Baseline unavailable':'derived baseline comparison'}/></div><div className="dashboard-grid"><section className="panel"><div className="section-kicker">Current forecast confidence</div><div className="analytics-bars"><span style={{height:`${metrics.forecastAccuracy}%`}}/></div></section><section className="panel"><div className="section-kicker"><Sparkles/> Derived insights</div><div className="setting-row">Prepared quantity <strong>{metrics.preparationEfficiency.toFixed(1)}% of forecast</strong></div><div className="setting-row">Projected stockout rate <strong>{metrics.stockoutRate.toFixed(1)}%</strong></div><div className="setting-row">Waste baseline <strong>{metrics.wasteReductionPct===null?'unavailable':'available'}</strong></div></section></div></PageFrame>}
+export function AnalyticsPage(){
+ const {state}=usePlateIQ();
+ const metrics=getAnalyticsMetrics(state);
+ const [notice,setNotice]=useState('');
+ const totalDemand=state.forecasts.reduce((sum,item)=>sum+item.forecast,0);
+ const totalActual=state.forecasts.reduce((sum,item)=>sum+item.actual,0);
+ const totalPrepared=state.dishes.reduce((sum,item)=>sum+item.prepared,0);
+ const totalWaste=state.waste.reduce((sum,item)=>sum+item.wasteKg,0);
+ const wasteCost=state.waste.reduce((sum,item)=>sum+item.wasteCost,0);
+ const lowStock=state.inventory.filter(item=>item.status==='Low'||item.status==='Critical');
+ const completedBatches=state.batches.filter(item=>item.status==='Completed').length;
+ const maxDishValue=Math.max(1,...state.forecasts.flatMap(item=>[item.forecast,item.actual]));
+ const dishRows=state.forecasts.map(item=>({ ...item, name:state.dishes.find(dish=>dish.id===item.dishId)?.name??item.dishId, variance:item.actual-item.forecast }));
+ const exportCsv=()=>{
+  const header=['Dish','Forecast','Actual orders','Variance','Prepared','Confidence (%)','Recommended preparation'];
+  const rows=dishRows.map(item=>[item.name,item.forecast,item.actual,item.variance,state.dishes.find(dish=>dish.id===item.dishId)?.prepared??0,item.confidence,item.recommendedPreparation]);
+  const csv=[header,...rows].map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  const link=document.createElement('a');link.href=url;link.download='plateiq-insights.csv';link.click();URL.revokeObjectURL(url);
+  setNotice('Insights report exported as CSV.');
+ };
+ const insightCards=[
+  {type:lowStock.some(item=>item.status==='Critical')?'urgent':'watch',title:lowStock.some(item=>item.status==='Critical')?'Critical stock needs attention':lowStock.length?'Review low-stock ingredients':'Inventory coverage looks stable',body:lowStock.length?lowStock.slice(0,3).map(item=>item.name+' ('+item.daysLeft.toFixed(1)+' days)').join(', '):'No low or critical stock items are currently flagged.',href:'/app/inventory',action:'Review inventory'},
+  {type:totalPrepared>totalDemand?'watch':'positive',title:totalPrepared>totalDemand?'Preparation is above forecast':'Preparation is tracking forecast',body:'Prepared '+totalPrepared+' portions against '+totalDemand+' forecast portions.',href:'/app/kitchen-planner',action:'Review prep plan'},
+  {type:totalWaste>0?'watch':'positive',title:totalWaste>0?'Recorded waste has a cost signal':'Start tracking waste events',body:totalWaste>0?totalWaste.toFixed(1)+' kg recorded · estimated cost ₹'+Math.round(wasteCost).toLocaleString('en-IN'):'Add waste records to surface category and dish-level patterns.',href:'/app/waste-intelligence',action:'Explore waste'},
+ ];
+ return <PageFrame title="Insights" subtitle="Turn forecast, preparation, inventory, and waste signals into clearer day-to-day decisions.">
+  <div className="insights-demo-banner"><span className="insights-demo-dot"/> DEMO INSIGHTS <span>Calculated from PlateIQ's current local demo state; historical trends and external data are not connected.</span></div>
+  {notice&&<div className="insights-notice" role="status">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss message">×</button></div>}
+  <section className="insights-hero">
+   <div><span className="insights-eyebrow">OPERATIONAL PERFORMANCE</span><h2>Your kitchen, at a glance</h2><p>Live calculations from the current demo forecast and recorded operations.</p></div>
+   <button className="insights-export-button" onClick={exportCsv}><span>↓</span> Export report</button>
+  </section>
+  <div className="metrics-grid insights-metrics">
+   <Kpi label="Forecast confidence" value={metrics.forecastAccuracy.toFixed(1)+'%'} detail="Average confidence across forecasts"/>
+   <Kpi label="Demand forecast" value={totalDemand.toLocaleString('en-IN')} detail="Forecast portions across dishes"/>
+   <Kpi label="Prep efficiency" value={metrics.preparationEfficiency.toFixed(1)+'%'} detail="Prepared quantity vs forecast"/>
+   <Kpi label="Recorded waste" value={totalWaste.toFixed(1)+' kg'} detail="Across '+state.waste.length+' recorded events".replace('Across ','Across ' )}/>
+   <Kpi label="Stock risk" value={lowStock.length.toString()} detail="Low or critical ingredients"/>
+  </div>
+  <div className="insights-main-grid">
+   <section className="panel insights-performance-panel">
+    <div className="insights-section-heading"><div><span className="insights-kicker">DEMAND PERFORMANCE</span><h2>Forecast vs actual orders</h2><p>Compare forecast portions with the actual-order values currently stored for each dish.</p></div><span className="insights-chart-legend"><i className="insights-legend-forecast"/> Forecast <i className="insights-legend-actual"/> Actual</span></div>
+    <div className="insights-dish-chart">{dishRows.map(item=><div className="insights-dish-row" key={item.id}><div className="insights-dish-meta"><strong>{item.name}</strong><span>{item.actual>=item.forecast?'+'+(item.actual-item.forecast):(item.actual-item.forecast).toString()} portions vs forecast</span></div><div className="insights-dual-bars"><div className="insights-bar-line"><span className="insights-bar-label">Forecast</span><div className="insights-bar-track"><span className="insights-bar-forecast" style={{width:Math.max(2,item.forecast/maxDishValue*100)+'%'}}/></div><strong>{item.forecast}</strong></div><div className="insights-bar-line"><span className="insights-bar-label">Actual</span><div className="insights-bar-track"><span className="insights-bar-actual" style={{width:Math.max(2,item.actual/maxDishValue*100)+'%'}}/></div><strong>{item.actual}</strong></div></div></div>)}
+    {dishRows.length===0&&<div className="insights-empty">Forecast data will appear here when dishes are available.</div>}
+    </div>
+    <div className="insights-panel-footer"><span>Forecast total <strong>{totalDemand.toLocaleString('en-IN')}</strong></span><span>Actual orders <strong>{totalActual.toLocaleString('en-IN')}</strong></span><span>Variance <strong>{totalActual-totalDemand>0?'+':''}{(totalActual-totalDemand).toLocaleString('en-IN')}</strong></span></div>
+   </section>
+   <section className="panel insights-readiness-panel">
+    <div className="insights-section-heading"><div><span className="insights-kicker">SERVICE READINESS</span><h2>Operational pulse</h2><p>Current status from the shared demo data.</p></div></div>
+    <div className="insights-readiness-score"><div className="insights-readiness-ring" style={{'--insights-score':Math.max(0,Math.min(100,metrics.preparationEfficiency))+'%'} as React.CSSProperties}><strong>{Math.round(metrics.preparationEfficiency)}<small>%</small></strong></div><div><strong>Preparation efficiency</strong><p>{totalPrepared} portions prepared against {totalDemand} forecast.</p></div></div>
+    <div className="insights-readiness-list"><div><span><i className="insights-status-dot is-good"/>Inventory risk</span><strong>{lowStock.length===0?'No flagged items':lowStock.length+' items to review'}</strong></div><div><span><i className="insights-status-dot '+(completedBatches>0?'is-good':'is-neutral')+'"/>Completed batches</span><strong>{completedBatches}</strong></div><div><span><i className="insights-status-dot '+(state.waste.length>0?'is-watch':'is-neutral')+'"/>Waste records</span><strong>{state.waste.length}</strong></div><div><span><i className="insights-status-dot '+(state.events.length>0?'is-good':'is-neutral')+'"/>Operational events</span><strong>{state.events.length}</strong></div></div>
+   </section>
+  </div>
+  <section className="insights-insight-section"><div className="insights-section-heading"><div><span className="insights-kicker">SUGGESTED NEXT STEPS</span><h2>Signals worth a look</h2><p>Practical prompts generated from current demo values, not a trained AI model.</p></div><span className="insights-count-pill">{insightCards.length} signals</span></div>
+   <div className="insights-cards-grid">{insightCards.map((item,index)=><article className="panel insights-signal-card" key={item.title}><div className={'insights-signal-icon '+(item.type==='urgent'?'is-urgent':item.type==='watch'?'is-watch':'is-positive')}>{index===0?'!':index===1?'↗':'◌'}</div><span className={'insights-signal-tag '+(item.type==='urgent'?'is-urgent':item.type==='watch'?'is-watch':'is-positive')}>{item.type==='urgent'?'Priority':item.type==='watch'?'Review':'On track'}</span><h3>{item.title}</h3><p>{item.body}</p><Link href={item.href}>{item.action} <ArrowRight size={14}/></Link></article>)}</div>
+  </section>
+  <section className="panel insights-waste-summary"><div><span className="insights-kicker">WASTE & COST SIGNAL</span><h2>What is recorded so far</h2><p>Cost figures are estimates based on demo waste records, not audited savings or a historical reduction.</p></div><div className="insights-waste-stats"><div><span>Waste recorded</span><strong>{totalWaste.toFixed(1)} kg</strong></div><div><span>Estimated waste cost</span><strong>₹{Math.round(wasteCost).toLocaleString('en-IN')}</strong></div><div><span>Waste baseline</span><strong>{metrics.wasteReductionPct===null?'Not available':metrics.wasteReductionPct.toFixed(1)+'%'}</strong></div><Link href="/app/waste-intelligence">Open waste management <ArrowRight size={14}/></Link></div></section>
+  <div className="insights-footnote"><Sparkles size={15}/><span>Insights update when the local demo state changes. Reliable time-series trends, verified savings, and real restaurant integrations require historical records and backend data.</span></div>
+ </PageFrame>
+}
