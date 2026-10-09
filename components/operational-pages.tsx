@@ -75,11 +75,11 @@ export function WasteIntelligencePage(){
  const topDishes=Object.entries(summary.byDish).sort((a,b)=>b[1].wasteKg-a[1].wasteKg).slice(0,5);
  const exportCsv=()=>{
   const header=['Dish','Category','Waste kg','Waste cost INR','Date','Cause'];
-  const lines=state.waste.map(w=>[state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId,w.category,w.wasteKg,w.wasteCost,w.date,w.cause]);
+  const lines=records.map(w=>[state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId,w.category,w.wasteKg,w.wasteCost,w.date,w.cause]);
   const csv=[header,...lines].map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   const link=document.createElement('a');link.href=url;link.download='plateiq-waste-records.csv';link.click();URL.revokeObjectURL(url);
-  setNotice('Waste records CSV exported.');
+  setNotice('Exported '+records.length+' filtered waste record'+(records.length===1?'':'s')+' to CSV.');
  };
  const recordWaste=(event:React.FormEvent<HTMLFormElement>)=>{
   event.preventDefault();
@@ -122,7 +122,7 @@ export function WasteIntelligencePage(){
    <p className="waste-form-footnote">The cost is an estimate from the demo logic, not an audited food-cost calculation.</p>
   </section>
   <section className="panel data-panel waste-records-panel">
-   <div className="waste-panel-heading waste-records-heading"><div><span className="waste-kicker">AUDIT TRAIL</span><h2>Waste records</h2><p>Search and filter the waste events currently stored in this demo.</p></div><button className="waste-export-button" onClick={exportCsv}><span>↓</span> Export CSV</button></div>
+   <div className="waste-panel-heading waste-records-heading"><div><span className="waste-kicker">AUDIT TRAIL</span><h2>Waste records</h2><p>Search and filter the waste events currently stored in this demo.</p></div><button className="waste-export-button" onClick={exportCsv} disabled={records.length===0} title={records.length===0?'No matching records to export':'Export the records matching the current filters'}><span>↓</span> Export CSV</button></div>
    <div className="waste-table-controls"><label className="waste-search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search dishes or causes..." aria-label="Search waste records"/></label><label className="waste-category-filter">Category<select value={category} onChange={e=>setCategory(e.target.value)}><option>All</option>{categories.map(option=><option key={option}>{option}</option>)}</select></label></div>
    <div className="table-wrap waste-table-wrap"><table className="waste-table"><thead><tr><th>Dish</th><th>Category</th><th>Quantity</th><th>Est. cost</th><th>Date & time</th><th>Cause</th><th>Quick action</th></tr></thead><tbody>{records.map(w=><tr key={w.id}><td><strong>{state.dishes.find(d=>d.id===w.dishId)?.name||w.dishId}</strong></td><td><span className={'waste-category-pill waste-pill-'+categories.indexOf(w.category)}>{w.category}</span></td><td><strong>{w.wasteKg.toFixed(1)} {w.unit}</strong></td><td>₹{Math.round(w.wasteCost).toLocaleString('en-IN')}</td><td>{formatDate(w.date)}</td><td>{w.cause}</td><td><button className="waste-row-action" onClick={()=>{dispatch({type:'record-waste',dishId:w.dishId,wasteKg:0.5,category:w.category,cause:'Additional event: '+w.cause});setNotice('Added another 0.5 kg waste event for '+(state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId)+'.');}}>＋ 0.5 kg</button></td></tr>)}</tbody></table>{records.length===0&&<div className="waste-empty waste-table-empty"><strong>No matching records</strong><p>Try another search or category filter.</p></div>}</div>
    <div className="waste-table-footer"><span>{records.length} of {state.waste.length} records</span><span>Demo state · local only</span></div>
