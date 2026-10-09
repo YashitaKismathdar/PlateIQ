@@ -157,7 +157,7 @@ export default function DemandForecastPage() {
 
         <section className="forecast-panel forecast-demand-panel">
           <div className="forecast-panel-heading">
-            <div><span className="forecast-section-label">DISH-LEVEL OUTLOOK</span><h2>Forecast vs. recorded orders</h2><p>Bars use shared demo workspace data; choose a view to change the dish ordering.</p></div>
+            <div><span className="forecast-section-label">DISH-LEVEL OUTLOOK</span><h2>Forecast vs. recorded orders</h2><p>Bars use local demo data; choose a view to change the dish ordering.</p></div>
             <div className="forecast-range-switch" aria-label="Forecast view">
               {['All dishes', 'Highest demand', 'Lowest confidence'].map((value) => <button key={value} className={range === value ? 'selected' : ''} onClick={() => setRange(value)}>{value}</button>)}
             </div>
