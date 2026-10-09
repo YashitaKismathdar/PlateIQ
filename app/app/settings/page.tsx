@@ -17,7 +17,7 @@ const defaultPreferences: Preferences = {
 }
 
 export default function SettingsPage() {
-  const { dispatch } = usePlateIQ()
+  const { state, dispatch } = usePlateIQ()
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences)
   const [loaded, setLoaded] = useState(false)
   const [savedMessage, setSavedMessage] = useState('')
@@ -69,7 +69,7 @@ export default function SettingsPage() {
         <div className="settings-grid">
           <section className="panel settings-card">
             <h2>Restaurant</h2>
-            <p>Jubilee Hills Restaurant · Hyderabad, India</p>
+            <p>{state.restaurant.name} · {state.restaurant.city}</p>
             <h2>Service hours</h2>
             <p>Lunch service · 11:00 AM – 3:00 PM</p>
             <h2>Currency</h2>

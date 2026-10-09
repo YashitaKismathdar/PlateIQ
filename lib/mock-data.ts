@@ -1,5 +1,5 @@
 import type { Alert, Dish, InventoryItem, KitchenStation, Restaurant, SimulationScenario, WasteRecord } from './types'
-export const restaurant:Restaurant={id:'jubilee-hills',name:'Jubilee Hills Restaurant',city:'Hyderabad',country:'India',timezone:'Asia/Kolkata',currency:'₹'}
+export const restaurant:Restaurant={id:'demo-restaurant',name:'Demo Restaurant',city:'',country:'India',timezone:'Asia/Kolkata',currency:'₹'}
 export const dishes:Dish[]=[
 {id:'biryani',name:'Chicken Biryani',category:'Mains',forecast:126,lowerBound:118,upperBound:126,confidence:91,actualOrders:92,prepared:60,initialBatch:60,nextBatch:30,batchSize:30,leadTimeMinutes:18,status:'Batch Recommended',ingredients:{chicken:8,rice:5,yogurt:2,onions:2.5}},
 {id:'paneer',name:'Paneer Curry',category:'Mains',forecast:82,lowerBound:76,upperBound:88,confidence:94,actualOrders:65,prepared:70,initialBatch:70,nextBatch:20,batchSize:20,leadTimeMinutes:15,status:'On Track',ingredients:{paneer:5,tomatoes:3,onions:1.5}},

@@ -95,7 +95,7 @@ export default function KitchenPlannerPage() {
 
   return <AppShell>
     <div className="page-body stitch-workspace-page stitch-page-tasks">
-      <div className="stitch-page-intro"><div><div className="stitch-page-kicker"><span className="stitch-live-dot" /> PLATEIQ INTELLIGENCE <span className="separator">/</span> LIVE WORKSPACE</div><h1>Tasks &amp; Checklists</h1><p>Coordinate kitchen prep, food safety checks and shift hand-offs in one workspace.</p></div><div className="stitch-page-status tasks-demo-status"><span className="stitch-live-dot" /> DEMO CHECKLIST · SAVED IN THIS BROWSER</div></div>
+      <div className="stitch-page-intro"><div><div className="stitch-page-kicker"><span className="stitch-live-dot" /> PLATEIQ INTELLIGENCE <span className="separator">/</span> DEMO WORKSPACE</div><h1>Tasks &amp; Checklists</h1><p>Coordinate kitchen prep, food safety checks and shift hand-offs in one workspace.</p></div><div className="stitch-page-status tasks-demo-status"><span className="stitch-live-dot" /> DEMO CHECKLIST · SAVED IN THIS BROWSER</div></div>
 
       <section className="panel tasks-hero"><div><div className="section-kicker"><ClipboardCheck size={15} /> SHIFT EXECUTION</div><h2>Make every service task visible and accountable.</h2><p className="muted-copy">Track priority, ownership and progress. Changes are saved in this browser; this is not connected to a live kitchen task system.</p></div><button className="tasks-primary-button" onClick={() => setNewTaskOpen(value => !value)}>{newTaskOpen ? <X size={16} /> : <Plus size={16} />}{newTaskOpen ? 'Cancel' : 'New task'}</button></section>
 

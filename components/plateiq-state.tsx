@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+import { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import type React from 'react'
 import type { BatchStatus, OperationalEvent, PlateIQAction, PlateIQState, Severity } from '@/lib/types'
 import { restaurant, dishes, inventory, stations, alerts, scenario, waste } from '@/lib/mock-data'
@@ -173,26 +173,26 @@ export function reducer(state: PlateIQState, action: PlateIQAction): PlateIQStat
       const item = state.inventory.find(candidate => candidate.id === action.itemId)
       if (!item || item.orderStatus !== 'Ordered' || action.amount <= 0) return state
       const updated = receiveStock(item, action.amount)
-      return { ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_RECEIVED', `${item.name} delivery received`, `${action.amount} ${item.unit} was added to inventory.`, '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Delivery received', `${item.name} stock is now ${updated.currentStock} ${item.unit}.`, '/app/inventory'), ...state.notifications] }
+      return syncState({ ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_RECEIVED', `${item.name} delivery received`, `${action.amount} ${item.unit} was added to inventory.`, '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Delivery received', `${item.name} stock is now ${updated.currentStock} ${item.unit}.`, '/app/inventory'), ...state.notifications] })
     }
     case 'adjust-stock': {
       const item = state.inventory.find(candidate => candidate.id === action.itemId)
       const updated = item ? adjustStock(item, action.amount) : null
       if (!item || !updated) return { ...state, events: [createEvent(state, 'INVENTORY_ADJUSTMENT_FAILED', 'Inventory adjustment blocked', `${item?.name ?? 'Ingredient'} cannot be adjusted below zero.`, '/app/inventory', 'warning'), ...state.events] }
-      return { ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ADJUSTED', `${item.name} inventory adjusted`, 'Inventory quantity was updated safely.', '/app/inventory'), ...state.events] }
+      return syncState({ ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ADJUSTED', `${item.name} inventory adjusted`, 'Inventory quantity was updated safely.', '/app/inventory'), ...state.events] })
     }
     case 'mark-ordered': {
       const item = state.inventory.find(candidate => candidate.id === action.itemId)
       if (!item || item.orderStatus === 'Ordered') return state
       const updated = markOrdered(item)
-      return { ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ORDERED', `${item.name} ordered`, 'A replenishment order was placed without changing stock.', '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Reorder placed', `${item.name} is now marked Ordered.`, '/app/inventory'), ...state.notifications] }
+      return syncState({ ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ORDERED', `${item.name} ordered`, 'A replenishment order was placed without changing stock.', '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Reorder placed', `${item.name} is now marked Ordered.`, '/app/inventory'), ...state.notifications] })
     }
     case 'record-waste': {
       const dish = state.dishes.find(candidate => candidate.id === action.dishId)
       if (!dish || action.wasteKg <= 0) return state
       const record = { id: `waste-${state.waste.length + 1}`, dishId: dish.id, prepared: dish.prepared, consumed: dish.actualOrders, spoilageKg: action.category === 'Spoilage' ? action.wasteKg : 0, overproductionKg: action.category === 'Overproduction' ? action.wasteKg / 0.045 : 0, wasteKg: Number(action.wasteKg.toFixed(1)), wasteCost: Math.round(action.wasteKg * 150), unit: 'kg' as const, category: action.category, cause: action.cause, date: new Date().toISOString() }
       const summary = wasteSummary([record, ...state.waste])
-      return { ...state, waste: [record, ...state.waste], metrics: { ...state.metrics, wasteKg: summary.wasteKg, wasteCost: summary.wasteCost, savings: summary.potentialSavings ?? 0 }, events: [createEvent(state, 'WASTE_RECORDED', `${dish.name} waste recorded`, `${record.wasteKg.toFixed(1)} kg recorded as ${record.category}.`, '/app/waste-intelligence'), ...state.events], notifications: [createNotification(state, 'Waste recorded', `${dish.name}: ${record.wasteKg.toFixed(1)} kg.`, '/app/waste-intelligence'), ...state.notifications] }
+      return syncState({ ...state, waste: [record, ...state.waste], metrics: { ...state.metrics, wasteKg: summary.wasteKg, wasteCost: summary.wasteCost, savings: summary.potentialSavings ?? 0 }, events: [createEvent(state, 'WASTE_RECORDED', `${dish.name} waste recorded`, `${record.wasteKg.toFixed(1)} kg recorded as ${record.category}.`, '/app/waste-intelligence'), ...state.events], notifications: [createNotification(state, 'Waste recorded', `${dish.name}: ${record.wasteKg.toFixed(1)} kg.`, '/app/waste-intelligence'), ...state.notifications] })
     }
     case 'batch': return advanceBatch(state, action.batchId ?? state.demo.batch.id)
     case 'batch-status': return advanceBatch(state, action.batchId, action.status)
@@ -204,20 +204,29 @@ const Ctx = createContext<{ state: PlateIQState; dispatch: React.Dispatch<PlateI
 
 export function PlateIQProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState)
+  const [hydrated, setHydrated] = useState(false)
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('plateiq-state')
-      if (!saved) return
-      const parsed: unknown = JSON.parse(saved)
-      if (isValidPersistedState(parsed)) dispatch({ type: 'hydrate', state: parsed })
-      else localStorage.removeItem('plateiq-state')
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved)
+        if (isValidPersistedState(parsed)) dispatch({ type: 'hydrate', state: parsed })
+        else localStorage.removeItem('plateiq-state')
+      }
     } catch {
       localStorage.removeItem('plateiq-state')
+    } finally {
+      setHydrated(true)
     }
   }, [])
+
   useEffect(() => {
+    // Do not overwrite saved data with initialState before hydration finishes.
+    if (!hydrated) return
     try { localStorage.setItem('plateiq-state', JSON.stringify(state)) } catch {}
-  }, [state])
+  }, [state, hydrated])
+
   return <Ctx.Provider value={{ state, dispatch }}>{children}</Ctx.Provider>
 }
 
