@@ -83,7 +83,7 @@ export default function DemandForecastPage() {
   }
 
   function resetView() {
-    setRange('7 days')
+    setRange('All dishes')
     setQuery('')
     setRiskFilter('All items')
     setNotice('Forecast filters reset. Shared kitchen data was not changed.')
