@@ -86,7 +86,7 @@ export default function DemandForecastPage() {
     setRange('All dishes')
     setQuery('')
     setRiskFilter('All items')
-    setNotice('Forecast filters reset. Shared kitchen data was not changed.')
+    setNotice('Forecast filters reset. Your local demo data was not changed.')
   }
 
   function exportForecast() {
@@ -126,10 +126,10 @@ export default function DemandForecastPage() {
         {notice && <div className="forecast-notice" role="status"><Check size={16} /> {notice}<button onClick={() => setNotice('')} aria-label="Dismiss message">×</button></div>}
 
         <div className="forecast-context-row">
-          <div className="forecast-context"><CalendarDays size={17} /><span><strong>Current demo service</strong><small>Forecasts from shared kitchen workspace</small></span></div>
+          <div className="forecast-context"><CalendarDays size={17} /><span><strong>Current demo service</strong><small>Forecasts from local demo data</small></span></div>
           <div className="forecast-context"><CloudRain size={17} /><span><strong>{state.scenario.weather === 'Rain' || state.scenario.weather === 'Heavy Rain' ? state.scenario.weather : state.scenario.weather + ' conditions'}</strong><small>Scenario inputs from External Factors</small></span></div>
           <div className="forecast-context"><Utensils size={17} /><span><strong>{items.length} menu items tracked</strong><small>{averageConfidence}% average forecast confidence</small></span></div>
-          <span className="forecast-demo-label"><Info size={13} /> Demo data · shared state</span>
+          <span className="forecast-demo-label"><Info size={13} /> Demo data · local state</span>
         </div>
 
         <div className="forecast-kpi-grid">
