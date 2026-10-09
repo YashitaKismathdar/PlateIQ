@@ -407,3 +407,31 @@ input, select { accent-color: var(--emerald); }
 .stitch-confidence-scale i { width:8px; height:8px; border-radius:50%; }.stitch-confidence-scale i.high { background:#248452; }.stitch-confidence-scale i.medium { background:#d59a3a; }.stitch-confidence-scale i.low { background:#c96b55; }
 @media(max-width:1100px) { .stitch-forecast-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }.stitch-forecast-layout { grid-template-columns:1fr; }.stitch-forecast-side { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:700px) { .stitch-forecast-hero { flex-direction:column; align-items:stretch; padding:22px; }.stitch-forecast-controls { width:100%; box-sizing:border-box; }.stitch-forecast-side { grid-template-columns:1fr; }.stitch-forecast-kpis { gap:9px; }.stitch-forecast-kpis article { padding:14px; }.stitch-forecast-chart-card,.stitch-forecast-table-card,.stitch-forecast-insight { padding:15px; }.stitch-forecast-bar-row { grid-template-columns:90px minmax(50px,1fr) 70px; gap:8px; }.stitch-forecast-chart-card .stitch-section-heading,.stitch-forecast-table-card .stitch-section-heading { flex-direction:column; } }
+
+
+/* AI Copilot: keep the demo disclosure compact instead of a full-width green banner. */
+.copilot-demo-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 12px;
+  margin: 0 0 16px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.45;
+  flex-wrap: wrap;
+}
+.copilot-demo-notice > span:last-child {
+  max-width: 520px;
+}
+@media (max-width: 640px) {
+  .copilot-demo-notice {
+    border-radius: 12px;
+    align-items: flex-start;
+  }
+  .copilot-demo-notice > span:last-child {
+    max-width: 100%;
+  }
+}
