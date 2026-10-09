@@ -586,3 +586,54 @@ button, a, input, select { -webkit-tap-highlight-color:transparent; }
 .stitch-top-waste > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--ci-border); font-size: 12px; }
 .stitch-top-waste > div strong { color: var(--ci-text); font-weight: 650; }
 .stitch-top-waste > div span { color: var(--ci-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+
+/* Live Operations: state-backed queue, clear demo labeling, and responsive controls. */
+.live-demo-label {
+  display:inline-flex; align-items:center; min-height:34px; padding:0 10px;
+  border:1px solid #dce8d8; border-radius:9px; background:#f1f7ed;
+  color:#4c6d51; font-size:9px; font-weight:800; letter-spacing:.07em;
+}
+.live-operations-link { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:36px; padding:0 12px; color:var(--green); font-size:11px; font-weight:700; text-decoration:none; }
+.live-operations-link svg { width:14px; height:14px; }
+.live-station-footnote { display:block; margin-top:10px; color:var(--muted); font-size:10px; line-height:1.45; }
+.live-batch-ticket { align-items:flex-start; }
+.live-batch-actions { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:12px; }
+.live-batch-actions .primary-button { display:inline-flex; align-items:center; gap:7px; min-height:32px; padding:7px 10px; font-size:10px; }
+.live-batch-actions .primary-button svg { width:13px; height:13px; }
+.live-batch-actions > span { color:var(--muted); font-size:9px; }
+.live-demand-progress { margin:20px 0; padding:15px; border:1px solid var(--line); border-radius:12px; background:#f8faf6; }
+.live-demand-progress > div:not(.station-progress) { display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--muted); font-size:10px; }
+.live-demand-progress > div strong { color:var(--ink); font-size:12px; }
+.live-demand-progress .station-progress { margin:10px 0 13px; }
+.live-ai-recommendation a { display:inline-flex; align-items:center; gap:6px; margin-top:10px; color:var(--green); font-size:10px; font-weight:750; text-decoration:none; }
+.live-ai-recommendation a svg { width:13px; height:13px; }
+.live-alert-list { display:flex; flex-direction:column; }
+.live-alert-list .expedite-alert { position:relative; padding-right:34px; }
+.live-dismiss-alert { position:absolute; top:13px; right:0; display:grid; place-items:center; width:28px; height:28px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--muted); cursor:pointer; }
+.live-dismiss-alert:hover { background:#f8eee9; border-color:#f0d0c4; color:#a74a37; }
+.live-dismiss-alert svg { width:14px; height:14px; }
+.live-menu-readiness { display:flex; flex-direction:column; gap:0; margin-top:20px; }
+.live-menu-row { display:grid; grid-template-columns:minmax(130px,.8fr) minmax(100px,1.4fr) minmax(100px,.55fr); align-items:center; gap:18px; padding:13px 0; border-top:1px solid var(--line); }
+.live-menu-label { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.live-menu-label strong { color:var(--ink); font-size:11px; }
+.live-menu-label span,.live-menu-count small { color:var(--muted); font-size:9px; }
+.live-menu-track { height:7px; overflow:hidden; border-radius:99px; background:#edf1e9; }
+.live-menu-track span { display:block; height:100%; border-radius:inherit; background:#29985a; transition:width .25s ease; }
+.live-menu-count { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.live-menu-count strong { color:var(--green); font-size:12px; }
+@media (max-width:1100px) {
+  .live-station-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:760px) {
+  .live-operations-summary { align-items:flex-start; flex-direction:column; }
+  .live-operations-status { flex-wrap:wrap; }
+  .live-station-grid { grid-template-columns:1fr; }
+  .live-menu-row { grid-template-columns:minmax(90px,.8fr) minmax(70px,1fr); gap:10px; }
+  .live-menu-track { grid-column:1 / -1; grid-row:2; }
+  .live-menu-count { grid-column:2; grid-row:1; }
+  .live-operations-link { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .live-menu-track span { transition:none; }
+}
