@@ -116,6 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="app-shell">
       <aside className={`sidebar ${open ? 'open' : ''}`}>
+        <div className="sidebar-main">
         <div className="brand">
           <div className="brand-mark"><Leaf /></div>
           <span>Plate<span>IQ</span></span>
@@ -141,6 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )
           })}
         </nav>
+        </div>
 
         <div className="sidebar-bottom">
           <div className="sidebar-status"><span className="status-pulse" /> Kitchen intelligence online</div>
