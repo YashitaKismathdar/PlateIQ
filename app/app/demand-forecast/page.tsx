@@ -35,7 +35,7 @@ function getRisk(prepared: number, forecast: number, upper: number): Risk {
 
 export default function DemandForecastPage() {
   const { state, dispatch } = usePlateIQ()
-  const [range, setRange] = useState('7 days')
+  const [range, setRange] = useState('All dishes')
   const [query, setQuery] = useState('')
   const [riskFilter, setRiskFilter] = useState('All items')
   const [notice, setNotice] = useState('')
@@ -74,7 +74,7 @@ export default function DemandForecastPage() {
   const shortage = items.reduce((sum, item) => sum + Math.max(0, item.forecast - item.cooked), 0)
   const highRiskCount = items.filter((item) => item.wasteRisk === 'High').length
   const averageConfidence = items.length ? Math.round(items.reduce((sum, item) => sum + item.confidence, 0) / items.length) : 0
-  const chartItems = range === '7 days' ? items.slice(0, 5) : range === '14 days' ? [...items].sort((a, b) => b.forecast - a.forecast) : [...items].sort((a, b) => a.confidence - b.confidence)
+  const chartItems = range === 'All dishes' ? items : range === 'Highest demand' ? [...items].sort((a, b) => b.forecast - a.forecast) : [...items].sort((a, b) => a.confidence - b.confidence)
   const chartScale = Math.max(1, ...chartItems.map((item) => Math.max(item.forecast, item.yesterday))) * 1.12
 
   function applyRecommendations() {
@@ -154,9 +154,9 @@ export default function DemandForecastPage() {
 
         <section className="forecast-panel forecast-demand-panel">
           <div className="forecast-panel-heading">
-            <div><span className="forecast-section-label">DISH-LEVEL OUTLOOK</span><h2>Forecast vs. recorded orders</h2><p>Bars use the shared demo workspace data; choose a view to sort the dishes.</p></div>
+            <div><span className="forecast-section-label">DISH-LEVEL OUTLOOK</span><h2>Forecast vs. recorded orders</h2><p>Bars use shared demo workspace data; choose a view to change the dish ordering.</p></div>
             <div className="forecast-range-switch" aria-label="Forecast view">
-              {['7 days', '14 days', '30 days'].map((value) => <button key={value} className={range === value ? 'selected' : ''} onClick={() => setRange(value)}>{value}</button>)}
+              {['All dishes', 'Highest demand', 'Lowest confidence'].map((value) => <button key={value} className={range === value ? 'selected' : ''} onClick={() => setRange(value)}>{value}</button>)}
             </div>
           </div>
           <div className="forecast-chart-legend"><span><i className="legend-forecast" /> Forecast demand</span><span><i className="legend-actual" /> Recorded orders</span></div>
