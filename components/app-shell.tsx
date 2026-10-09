@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   Activity,
   Bell,
@@ -53,6 +53,7 @@ function initialsFor(name: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname()
+  const router = useRouter()
   const { state, dispatch } = usePlateIQ()
   const [open, setOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -133,7 +134,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={label}
                 className={`nav-item ${path === href ? 'active' : ''}`}
                 aria-current={path === href ? 'page' : undefined}
-                onClick={() => setOpen(false)}
+                onClick={(event) => {
+                  event.preventDefault()
+                  setOpen(false)
+                  if (path !== href) router.push(href)
+                }}
               >
                 <Icon />
                 {label}
