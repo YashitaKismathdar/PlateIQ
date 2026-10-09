@@ -51,13 +51,14 @@ describe('inventory actions and batch consumption', () => {
 })
 
   it('keeps derived metrics consistent after inventory actions', () => {
+    const startingStock = item('tomatoes').currentStock
     const ordered = reducer(initialState, { type: 'mark-ordered', itemId: 'tomatoes' })
     const received = reducer(ordered, { type: 'receive-stock', itemId: 'tomatoes', amount: 8 })
-    expect(received.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(13.2)
+    expect(received.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(startingStock + 8)
     expect(validateStateConsistency(received)).toEqual([])
 
     const adjusted = reducer(received, { type: 'adjust-stock', itemId: 'tomatoes', amount: -2 })
-    expect(adjusted.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(11.2)
+    expect(adjusted.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(startingStock + 6)
     expect(validateStateConsistency(adjusted)).toEqual([])
   })
 
