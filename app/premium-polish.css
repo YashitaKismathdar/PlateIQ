@@ -221,3 +221,83 @@ input, select { accent-color: var(--emerald); }
     -webkit-overflow-scrolling: touch;
   }
 }
+
+
+/* Navigation layout fix: the brand and menu scroll together while the account
+   footer stays anchored to the bottom of the viewport. */
+.app-shell > .sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.app-shell > .sidebar > .sidebar-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-shell > .sidebar-main > .primary-navigation,
+.app-shell > .sidebar .sidebar-main > .primary-navigation {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.app-shell > .sidebar .sidebar-main > .primary-navigation::-webkit-scrollbar {
+  width: 6px;
+}
+.app-shell > .sidebar .sidebar-main > .primary-navigation::-webkit-scrollbar-thumb {
+  background: rgba(197, 220, 190, .45);
+  border-radius: 999px;
+}
+.app-shell > .sidebar .sidebar-main > .primary-navigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-shell > .sidebar > .sidebar-bottom {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+.app-shell > .sidebar .sidebar-main > .brand,
+.app-shell > .sidebar .sidebar-main > .sidebar-section-label {
+  flex: 0 0 auto;
+}
+.app-shell > .sidebar .primary-navigation > .nav-item {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .app-shell > .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 120;
+    width: min(292px, 86vw);
+    height: 100vh;
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform .22s ease;
+    overflow: hidden;
+  }
+  .app-shell > .sidebar.open {
+    transform: translateX(0);
+  }
+  .app-shell > .sidebar .sidebar-main {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .app-shell > .sidebar .sidebar-main > .primary-navigation {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
