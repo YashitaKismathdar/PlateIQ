@@ -76,7 +76,7 @@ export function WasteIntelligencePage(){
  const exportCsv=()=>{
   const header=['Dish','Category','Waste kg','Waste cost INR','Date','Cause'];
   const lines=records.map(w=>[state.dishes.find(d=>d.id===w.dishId)?.name??w.dishId,w.category,w.wasteKg,w.wasteCost,w.date,w.cause]);
-  const csv=[header,...lines].map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
+  const csv=[header,...lines].map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   const link=document.createElement('a');link.href=url;link.download='plateiq-waste-records.csv';link.click();URL.revokeObjectURL(url);
   setNotice('Exported '+records.length+' filtered waste record'+(records.length===1?'':'s')+' to CSV.');
