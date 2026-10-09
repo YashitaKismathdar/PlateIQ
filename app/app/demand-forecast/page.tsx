@@ -179,7 +179,7 @@ export default function DemandForecastPage() {
             </div>
           </div>
           <div className="forecast-chart-legend"><span><i className="legend-forecast" /> Forecast demand</span><span><i className="legend-actual" /> Recorded sales</span></div>
-          <div className="forecast-chart" role="img" aria-label={"Bar chart showing expected demand for " + range}>
+          <div className={'forecast-chart forecast-chart-' + range.replace(' ', '-')} role="img" aria-label={"Bar chart showing expected demand for " + range}>
             {chartDays.map((day, index) => (
               <div className="forecast-chart-column" key={day.date}>
                 <div className="forecast-chart-values"><span>{day.demand}</span>{day.actual !== null && <small>{day.actual}</small>}</div>
