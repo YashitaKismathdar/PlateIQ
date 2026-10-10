@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
+from fastapi import Query
+from database import init_db, save_forecast, get_forecast_history, get_forecast_count
 
 import joblib
 import numpy as np
@@ -7,6 +9,14 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+from fastapi import Query
+from backend.database import (
+    init_db,
+    save_forecast,
+    get_forecast_history,
+    get_forecast_count,
+)
 
 
 # =========================================================
@@ -38,7 +48,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+@app.on_event("startup")
+def startup_event():
+    init_db()
 # =========================================================
 # 2. LOAD MODEL AND DATA
 # =========================================================
@@ -201,12 +213,16 @@ def health():
 # =========================================================
 # 7. SINGLE MEAL PREDICTION
 # =========================================================
-
 @app.post("/predict")
-def predict_demand(request: PredictionRequest):
-    return generate_prediction(request)
+def predict(request: PredictionRequest):
+    result = generate_prediction(request)
 
+    save_forecast(
+        request.model_dump(),
+        result
+    )
 
+    return result
 # =========================================================
 # 8. BATCH FORECASTING
 # =========================================================
@@ -220,7 +236,13 @@ def forecast_batch(request: BatchPredictionRequest):
     # Generate each prediction.
     for item in request.predictions:
         result = generate_prediction(item)
-        results.append(result)
+        save_forecast(
+            item.model_dump(),
+            result
+        )
+
+
+    results.append(result)
 
     total_orders = sum(
         item["predicted_orders"] for item in results
@@ -311,3 +333,22 @@ def get_centers():
         )
 
     return centers.sort_values("center_id").to_dict(orient="records")
+
+#==========================================================
+# 12. FORECAST HISTORY
+#==========================================================
+
+@app.get("/forecast/history")
+def forecast_history(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    return {
+        "total": get_forecast_count(),
+        "limit": limit,
+        "offset": offset,
+        "forecasts": get_forecast_history(
+            limit=limit,
+            offset=offset,
+        ),
+    }
