@@ -13,7 +13,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 
-# All files are expected in the same folder as this script.
+# --------------------------------------------------
+# 1. File paths and configuration
+# --------------------------------------------------
+
 BASE_DIR = Path(__file__).resolve().parent
 
 TRAIN_FILE = BASE_DIR / "train.csv"
@@ -47,8 +50,36 @@ NUMERIC_FEATURES = [
 FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
 
 
+# --------------------------------------------------
+# 2. Create preprocessing pipeline
+# --------------------------------------------------
+
+def create_preprocessor():
+    try:
+        encoder = OneHotEncoder(
+            handle_unknown="ignore",
+            sparse_output=True,
+        )
+    except TypeError:
+        # Support older scikit-learn versions.
+        encoder = OneHotEncoder(
+            handle_unknown="ignore",
+            sparse=True,
+        )
+
+    return ColumnTransformer(
+        transformers=[
+            ("categories", encoder, CATEGORICAL_FEATURES),
+            ("numbers", "passthrough", NUMERIC_FEATURES),
+        ]
+    )
+
+
+# --------------------------------------------------
+# 3. Load and prepare data
+# --------------------------------------------------
+
 def main():
-    # 1. Check that the input files exist.
     for file_path in [TRAIN_FILE, MEAL_FILE, CENTER_FILE]:
         if not file_path.exists():
             raise FileNotFoundError(
@@ -64,9 +95,8 @@ def main():
 
     print(f"Historical order rows: {len(orders):,}")
     print(f"Meal records: {len(meals):,}")
-    print(f"Fulfillment centers: {len(centers):,}")
+    print(f"Fulfilment centers: {len(centers):,}")
 
-    # 2. Combine order history with meal and center information.
     data = orders.merge(
         meals,
         on="meal_id",
@@ -82,8 +112,11 @@ def main():
     )
 
     required_columns = FEATURES + [TARGET]
+
     missing_columns = [
-        col for col in required_columns if col not in data.columns
+        column
+        for column in required_columns
+        if column not in data.columns
     ]
 
     if missing_columns:
@@ -93,64 +126,72 @@ def main():
 
     data = data.dropna(subset=required_columns).copy()
 
-    # 3. Split chronologically: the latest weeks are the test set.
-    # This is more realistic than randomly mixing past and future weeks.
+    if data.empty:
+        raise ValueError("No valid data remains after removing missing values.")
+
+    if (data[TARGET] < 0).any():
+        raise ValueError(
+            "num_orders contains negative values. Check the training data."
+        )
+
+    # --------------------------------------------------
+    # 4. Split data chronologically
+    # --------------------------------------------------
+
     weeks = sorted(data["week"].unique())
 
     if len(weeks) < 5:
-        raise ValueError("Not enough distinct weeks to evaluate the model.")
+        raise ValueError(
+            "Not enough distinct weeks to evaluate the model."
+        )
 
-    test_week_count = max(1, int(np.ceil(len(weeks) * 0.20)))
+    test_week_count = max(
+        1,
+        int(np.ceil(len(weeks) * 0.20)),
+    )
+
     test_weeks = weeks[-test_week_count:]
     first_test_week = test_weeks[0]
 
-    train_data = data[data["week"] < first_test_week].copy()
-    test_data = data[data["week"].isin(test_weeks)].copy()
+    train_data = data[
+        data["week"] < first_test_week
+    ].copy()
+
+    test_data = data[
+        data["week"].isin(test_weeks)
+    ].copy()
 
     if train_data.empty or test_data.empty:
-        raise ValueError("The chronological train/test split is empty.")
+        raise ValueError(
+            "The chronological train/test split is empty."
+        )
 
     X_train = train_data[FEATURES]
-    y_train = train_data[TARGET].clip(lower=0)
+    y_train = train_data[TARGET]
 
     X_test = test_data[FEATURES]
-    y_test = test_data[TARGET].clip(lower=0)
+    y_test = test_data[TARGET]
 
     print(f"Training rows: {len(train_data):,}")
-    print(f"Testing rows:  {len(test_data):,}")
+    print(f"Testing rows: {len(test_data):,}")
+
     print(
         f"Training weeks: {train_data['week'].min()} "
         f"to {train_data['week'].max()}"
     )
+
     print(
-        f"Testing weeks:  {test_data['week'].min()} "
+        f"Testing weeks: {test_data['week'].min()} "
         f"to {test_data['week'].max()}"
     )
 
-    # 4. Encode categories and train a Random Forest.
-    # log1p helps the model handle widely varying order counts.
-    try:
-        encoder = OneHotEncoder(
-            handle_unknown="ignore",
-            sparse_output=True,
-        )
-    except TypeError:
-        # Compatibility with older scikit-learn versions.
-        encoder = OneHotEncoder(
-            handle_unknown="ignore",
-            sparse=True,
-        )
+    # --------------------------------------------------
+    # 5. Train and evaluate the evaluation model
+    # --------------------------------------------------
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("categories", encoder, CATEGORICAL_FEATURES),
-            ("numbers", "passthrough", NUMERIC_FEATURES),
-        ]
-    )
-
-    pipeline = Pipeline(
+    evaluation_model = Pipeline(
         steps=[
-            ("preprocessor", preprocessor),
+            ("preprocessor", create_preprocessor()),
             (
                 "model",
                 RandomForestRegressor(
@@ -165,28 +206,40 @@ def main():
         ]
     )
 
-    print("\nTraining model... This may take a few minutes.")
+    print("\nTraining evaluation model...")
 
-    pipeline.fit(X_train, np.log1p(y_train))
+    evaluation_model.fit(
+        X_train,
+        np.log1p(y_train),
+    )
 
-    # 5. Evaluate on later weeks the model did not train on.
-    predicted_log = pipeline.predict(X_test)
-    predictions = np.maximum(0, np.expm1(predicted_log))
+    predicted_log = evaluation_model.predict(X_test)
+
+    predictions = np.maximum(
+        0,
+        np.expm1(predicted_log),
+    )
 
     mae = mean_absolute_error(y_test, predictions)
-    rmse = np.sqrt(mean_squared_error(y_test, predictions))
+
+    rmse = np.sqrt(
+        mean_squared_error(y_test, predictions)
+    )
+
     r2 = r2_score(y_test, predictions)
 
     print("\n--- PLATEIQ MODEL EVALUATION ---")
     print(f"MAE:  {mae:.2f} orders")
     print(f"RMSE: {rmse:.2f} orders")
-    print(f"R²:   {r2:.4f}")
+    print(f"R2:   {r2:.4f}")
 
-    # 6. Retrain on all historical rows for backend handoff.
-    # The metrics above remain from the untouched test period.
+    # --------------------------------------------------
+    # 6. Train the final model on all historical data
+    # --------------------------------------------------
+
     final_model = Pipeline(
         steps=[
-            ("preprocessor", encoder_preprocessor(preprocessor)),
+            ("preprocessor", create_preprocessor()),
             (
                 "model",
                 RandomForestRegressor(
@@ -202,13 +255,20 @@ def main():
     )
 
     print("\nTraining final model on all historical data...")
+
     final_model.fit(
         data[FEATURES],
-        np.log1p(data[TARGET].clip(lower=0)),
+        np.log1p(data[TARGET]),
     )
 
-    # Save the fitted pipeline and the information the backend needs.
+    # Save the trained pipeline for the FastAPI backend.
     joblib.dump(final_model, MODEL_FILE)
+
+    print(f"Saved model: {MODEL_FILE}")
+
+    # --------------------------------------------------
+    # 7. Save evaluation metrics
+    # --------------------------------------------------
 
     metrics = {
         "model": "RandomForestRegressor",
@@ -231,29 +291,17 @@ def main():
     )
 
     print("\nExample predictions:")
+
     example = pd.DataFrame({
         "actual_orders": y_test.iloc[:10].to_numpy(),
         "predicted_orders": np.round(predictions[:10], 1),
     })
+
     print(example.to_string(index=False))
 
     print("\nTraining complete!")
-    print(f"Saved model:   {MODEL_FILE.name}")
+    print(f"Saved model: {MODEL_FILE.name}")
     print(f"Saved metrics: {METRICS_FILE.name}")
-
-
-def encoder_preprocessor(preprocessor):
-    """Create a fresh preprocessor for the final full-data fit."""
-    return ColumnTransformer(
-        transformers=[
-            (
-                "categories",
-                preprocessor.named_transformers_["categories"],
-                CATEGORICAL_FEATURES,
-            ),
-            ("numbers", "passthrough", NUMERIC_FEATURES),
-        ]
-    )
 
 
 if __name__ == "__main__":
