@@ -101,12 +101,12 @@ export default function SettingsPage() {
             <button
               className="outline-button"
               onClick={() => {
-                if (window.confirm('Reset the PlateIQ demo workspace data to its original state? Your notification preferences will be kept.')) {
+                if (window.confirm('Reset the workspace data to its original state? Your notification preferences will be kept.')) {
                   dispatch({ type: 'reset-data' })
                 }
               }}
             >
-              Reset demo workspace data
+              Reset workspace data
             </button>
           </section>
         </div>
