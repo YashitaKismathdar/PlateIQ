@@ -103,7 +103,7 @@ export default function LiveOperationsPage() {
             })}
             {visibleBatches.length === 0 && <div className="live-ticket-empty">{query ? `No active batches match “${query}”. Try another search.` : 'No active batches. All tracked preparation is complete.'}</div>}
           </div>
-          {activeBatches.length > 5 && <button className="live-view-all" onClick={() => setShowAll(value => !value)}>{showAll ? 'Show fewer batches' : 'View all active batches'} <ArrowRight /></button>}
+          {activeBatches.length > 5 && (showAll || query.trim() === '' || visibleBatches.length === 5) && <button className="live-view-all" onClick={() => setShowAll(value => !value)}>{showAll ? 'Show fewer batches' : 'View all active batches'} <ArrowRight /></button>}
         </div>
 
         <div className="panel service-pacing-panel">

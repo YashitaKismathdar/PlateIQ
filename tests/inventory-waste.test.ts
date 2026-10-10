@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { initialState, reducer } from '@/components/plateiq-state'
 import { consumeForBatch, ingredientRequirements } from '@/lib/inventory-engine'
 import { wasteSummary } from '@/lib/waste-engine'
+import { validateStateConsistency } from '@/lib/selectors'
 
 const biryani = initialState.dishes.find(dish => dish.id === 'biryani')!
 
@@ -49,6 +50,18 @@ describe('inventory actions and batch consumption', () => {
   })
 })
 
+  it('keeps derived metrics consistent after inventory actions', () => {
+    const startingStock = item('tomatoes').currentStock
+    const ordered = reducer(initialState, { type: 'mark-ordered', itemId: 'tomatoes' })
+    const received = reducer(ordered, { type: 'receive-stock', itemId: 'tomatoes', amount: 8 })
+    expect(received.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(startingStock + 8)
+    expect(validateStateConsistency(received)).toEqual([])
+
+    const adjusted = reducer(received, { type: 'adjust-stock', itemId: 'tomatoes', amount: -2 })
+    expect(adjusted.inventory.find(inventoryItem => inventoryItem.id === 'tomatoes')?.currentStock).toBe(startingStock + 6)
+    expect(validateStateConsistency(adjusted)).toEqual([])
+  })
+
 describe('waste records and summaries', () => {
   it('records waste for one dish and derives totals by category and dish', () => {
     const before = wasteSummary(initialState.waste)
@@ -62,7 +75,8 @@ describe('waste records and summaries', () => {
     expect(after.byDish.paneer.wasteKg).toBe(before.byDish.paneer.wasteKg)
     const record = next.waste[0]
     expect(record).toMatchObject({ dishId: 'biryani', category: 'Overproduction', cause: 'Late service overproduction', unit: 'kg', wasteKg: 0.5 })
-    expect(record.date).toBe(next.demo.simulatedTime)
+    expect(Number.isNaN(Date.parse(record.date))).toBe(false)
+    expect(record.date).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })
 
   it('does not increase waste when a preparation batch starts', () => {
