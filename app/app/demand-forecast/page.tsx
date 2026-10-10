@@ -79,14 +79,14 @@ export default function DemandForecastPage() {
 
   function applyRecommendations() {
     dispatch({ type: 'apply-plan' })
-    setNotice('Demo preparation plan recalculated. Changes are stored in this browser, not a shared live workspace.')
+    setNotice('Preparation plan recalculated.')
   }
 
   function resetView() {
     setRange('All dishes')
     setQuery('')
     setRiskFilter('All items')
-    setNotice('Forecast filters reset. Your local demo data was not changed.')
+    setNotice('Forecast filters reset.')
   }
 
   function exportForecast() {
@@ -126,10 +126,10 @@ export default function DemandForecastPage() {
         {notice && <div className="forecast-notice" role="status"><Check size={16} /> {notice}<button onClick={() => setNotice('')} aria-label="Dismiss message">×</button></div>}
 
         <div className="forecast-context-row">
-          <div className="forecast-context"><CalendarDays size={17} /><span><strong>Current demo service</strong><small>Forecasts from local demo data</small></span></div>
+          <div className="forecast-context"><CalendarDays size={17} /><span><strong>Current service</strong><small>Current forecast estimates</small></span></div>
           <div className="forecast-context"><CloudRain size={17} /><span><strong>{state.scenario.weather === 'Rain' || state.scenario.weather === 'Heavy Rain' ? state.scenario.weather : state.scenario.weather + ' conditions'}</strong><small>Scenario inputs from External Factors</small></span></div>
           <div className="forecast-context"><Utensils size={17} /><span><strong>{items.length} menu items tracked</strong><small>{averageConfidence}% average forecast confidence</small></span></div>
-          <span className="forecast-demo-label"><Info size={13} /> Demo data · local state</span>
+          
         </div>
 
         <div className="forecast-kpi-grid">
@@ -157,7 +157,7 @@ export default function DemandForecastPage() {
 
         <section className="forecast-panel forecast-demand-panel">
           <div className="forecast-panel-heading">
-            <div><span className="forecast-section-label">DISH-LEVEL OUTLOOK</span><h2>Forecast vs. recorded orders</h2><p>Bars use local demo data; choose a view to change the dish ordering.</p></div>
+            <div><span className="forecast-section-label">DISH-LEVEL OUTLOOK</span><h2>Forecast vs. recorded orders</h2><p>Choose a view to change the dish ordering.</p></div>
             <div className="forecast-range-switch" aria-label="Forecast view">
               {['All dishes', 'Highest demand', 'Lowest confidence'].map((value) => <button key={value} className={range === value ? 'selected' : ''} onClick={() => setRange(value)}>{value}</button>)}
             </div>
@@ -175,7 +175,7 @@ export default function DemandForecastPage() {
               </div>
             ))}
           </div>
-          <div className="forecast-chart-note"><TrendingUp size={16} /><span><strong>Use the range as a review view, not a time-series prediction.</strong> The current frontend has sample dish-level forecasts; it does not yet train a forecasting model or ingest live sales history.</span></div>
+          <div className="forecast-chart-note"><TrendingUp size={16} /><span><strong>Use the range as a review view, not a time-series prediction.</strong> These estimates are calculated from the workspace data. A trained forecasting model and POS sales feed are not connected.</span></div>
         </section>
 
         <section className="forecast-panel">
@@ -214,19 +214,19 @@ export default function DemandForecastPage() {
         <div className="forecast-bottom-grid">
           <section className="forecast-panel forecast-weather-panel">
             <div className="forecast-mini-heading"><span className="forecast-mini-icon"><CloudRain size={18} /></span><div><span className="forecast-section-label">EXTERNAL FACTORS</span><h2>Inputs affecting the scenario</h2></div></div>
-            <div className="forecast-factor-row"><span className="forecast-factor-icon"><CloudRain size={16} /></span><div><strong>{state.scenario.weather} weather</strong><small>Weather selection is shared with the External Factors page; its effect is simulated demo logic.</small></div><span className="forecast-factor-tag">Weather</span></div>
+            <div className="forecast-factor-row"><span className="forecast-factor-icon"><CloudRain size={16} /></span><div><strong>{state.scenario.weather} weather</strong><small>Weather selection is shared with External Factors and adjusts the scenario estimates.</small></div><span className="forecast-factor-tag">Weather</span></div>
             <div className="forecast-factor-row"><span className="forecast-factor-icon"><Wind size={16} /></span><div><strong>Customer change: {state.scenario.customerChange > 0 ? '+' : ''}{state.scenario.customerChange}%</strong><small>Adjust the customer change in External Factors to explore demand scenarios.</small></div><span className="forecast-factor-tag">Footfall</span></div>
-            <div className="forecast-factor-row"><span className="forecast-factor-icon"><CalendarDays size={16} /></span><div><strong>{state.scenario.holiday} holiday · {state.scenario.localEvent} local event</strong><small>Scenario values are illustrative and not connected to a live events feed.</small></div><span className="forecast-factor-tag">Events</span></div>
+            <div className="forecast-factor-row"><span className="forecast-factor-icon"><CalendarDays size={16} /></span><div><strong>{state.scenario.holiday} holiday · {state.scenario.localEvent} local event</strong><small>Scenario values are entered manually; no external events feed is connected.</small></div><span className="forecast-factor-tag">Events</span></div>
           </section>
           <section className="forecast-assist-panel">
-            <div className="forecast-assist-heading"><span><Sparkles size={17} /> PLATEIQ ASSIST</span><span className="forecast-assist-status">DEMO</span></div>
+            <div className="forecast-assist-heading"><span><Sparkles size={17} /> PLATEIQ ASSIST</span></div>
             <h2>Make prep decisions with confidence.</h2>
-            <p>Recalculate the shared demo plan after adjusting scenario inputs, then review the forecast range and available preparation batches before service.</p>
+            <p>Recalculate the preparation plan after adjusting scenario inputs, then review the forecast range and available preparation batches before service.</p>
             <div className="forecast-assist-stat"><span>Highest waste risk</span><strong>{items.find((item) => item.wasteRisk === 'High')?.name ?? 'None flagged'}</strong></div>
             <button className="forecast-assist-action" onClick={() => { setRiskFilter('High'); setNotice('Showing dishes currently flagged as high risk.'); }}><span>Review high-risk dishes</span><ArrowRight size={16} /></button>
           </section>
         </div>
-        <p className="forecast-disclaimer">Forecasting workspace preview · Sample values and scenario calculations only; no live POS feed or trained prediction model is connected.</p>
+        <p className="forecast-disclaimer">Forecast estimates use the current workspace data and scenario calculations. A POS feed and trained prediction model are not connected.</p>
       </div>
     </AppShell>
   )
