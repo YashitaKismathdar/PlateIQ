@@ -8,7 +8,7 @@ import { adjustStock, consumeForBatch, deriveInventoryState, markOrdered, receiv
 import { getForecastMetrics, getRestaurantMetrics, isValidPersistedState, simulateScenario } from '@/lib/selectors'
 import { wasteSummary } from '@/lib/waste-engine'
 
-const now = '2025-06-24T12:45:00+05:30'
+const now = new Date().toISOString()
 const initialBiryani = dishes.find(dish => dish.id === 'biryani')
 const initialOrders = initialBiryani?.actualOrders ?? 0
 const initialOrdersPerMinute = Number((initialOrders / 6).toFixed(1))
@@ -57,7 +57,7 @@ export const initialState: PlateIQState = {
   recommendations: [{ id: 'rec-1', title: `Start preparation batch #2 +${initialBatches[0].quantity}`, description: 'Biryani is tracking above the initial preparation plan.', actionLabel: 'Start Batch #2', confidence: initialForecast.confidence, dishId: 'biryani' }],
   events: [],
   scenario,
-  demo: { running: false, step: 0, speed: 1, orders: initialDemoMetrics.orders, ordersPerMinute: initialDemoMetrics.ordersPerMinute, baselineVelocity: 8, projectedDemand: initialForecast.projectedDemand, prepared: initialPrepared, kitchenCapacity: initialDemoMetrics.kitchenCapacity, forecast: initialForecast.forecast, lowerBound: initialForecast.lowerBound, upperBound: initialForecast.upperBound, confidence: initialForecast.confidence, status: initialDemoMetrics.status, batch: initialBatches[0], showReason: false, dismissedAlertIds: [], scenario, simulatedTime: '2025-06-24T11:00:00+05:30' },
+  demo: { running: false, step: 0, speed: 1, orders: initialDemoMetrics.orders, ordersPerMinute: initialDemoMetrics.ordersPerMinute, baselineVelocity: 8, projectedDemand: initialForecast.projectedDemand, prepared: initialPrepared, kitchenCapacity: initialDemoMetrics.kitchenCapacity, forecast: initialForecast.forecast, lowerBound: initialForecast.lowerBound, upperBound: initialForecast.upperBound, confidence: initialForecast.confidence, status: initialDemoMetrics.status, batch: initialBatches[0], showReason: false, dismissedAlertIds: [], scenario, simulatedTime: new Date().toISOString() },
   metrics: { demand: initialForecasts.reduce((sum, forecast) => sum + forecast.forecast, 0), prepared: initialPrepared, wasteKg: initialWaste.wasteKg, wasteCost: initialWaste.wasteCost, forecastAccuracy: initialForecasts.reduce((sum, forecast) => sum + forecast.confidence, 0) / initialForecasts.length, savings: initialWaste.potentialSavings ?? 0 },
 }
 
@@ -141,7 +141,7 @@ function advanceBatch(state: PlateIQState, batchId: string, requestedStatus?: Ba
 
 export function reducer(state: PlateIQState, action: PlateIQAction): PlateIQState {
   switch (action.type) {
-    case 'hydrate': return isValidPersistedState(action.state) ? syncState(action.state) : initialState
+    case 'hydrate': return isValidPersistedState(action.state) ? syncState({ ...action.state, restaurant: initialState.restaurant }) : initialState
     case 'reset-scenario': return { ...state, scenario, demo: { ...state.demo, scenario }, events: [createEvent(state, 'SCENARIO_RESET', 'Scenario reset', 'What-If inputs returned to the base scenario.', '/app/what-if'), ...state.events] }
     case 'reset-data': return initialState
     case 'reason': return { ...state, demo: { ...state.demo, showReason: action.value } }
@@ -236,7 +236,7 @@ export function usePlateIQ() {
   return value
 }
 
-export const navItems = [['Overview', '/app'], ['Live Operations', '/app/live-operations'], ['Tasks', '/app/kitchen-planner'], ['Forecasting', '/app/demand-forecast'], ['Inventory', '/app/inventory'], ['Waste Management', '/app/waste-intelligence'], ['External Factors', '/app/what-if'], ['AI Copilot', '/app/copilot'], ['Insights', '/app/analytics'], ['Settings', '/app/settings']] as const
+export const navItems = [['Overview', '/app'], ['Kitchen Operations', '/app/live-operations'], ['Tasks', '/app/kitchen-planner'], ['Forecasting', '/app/demand-forecast'], ['Inventory', '/app/inventory'], ['Waste Management', '/app/waste-intelligence'], ['External Factors', '/app/what-if'], ['AI Copilot', '/app/copilot'], ['Insights', '/app/analytics'], ['Settings', '/app/settings']] as const
 
 export function usePlateIQMetrics() {
   const { state } = usePlateIQ()
