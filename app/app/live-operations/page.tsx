@@ -41,7 +41,7 @@ export default function LiveOperationsPage() {
     <div className="page-body stitch-workspace-page stitch-page-live-operations">
       <div className="page-heading">
         <div>
-          <div className="eyebrow"><span className="live-dot" /> KITCHEN OPERATIONS <span className="separator">/</span> KITCHEN FLOOR</div>
+          <div className="eyebrow">KITCHEN OPERATIONS <span className="separator">/</span> KITCHEN FLOOR</div>
           <h1>Kitchen command center</h1>
           <p>Track preparation batches, station capacity, and operational alerts in one place.</p>
         </div>
@@ -52,7 +52,7 @@ export default function LiveOperationsPage() {
       </div>
 
       <div className="live-operations-summary">
-        <div className="live-operations-status"><span className="live-dot" /> Kitchen operations <span className="summary-divider" /> Updates as you change preparation batches</div>
+        <div className="live-operations-status">Kitchen operations <span className="summary-divider" /> Updates as you change preparation batches</div>
         <div className="live-operations-shift"><Clock3 /> {state.restaurant.name} <span>·</span> {state.restaurant.city}</div>
       </div>
 
