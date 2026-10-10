@@ -28,8 +28,11 @@ type ForecastItem = {
 const formatNumber = (value: number) => value.toLocaleString('en-IN')
 
 function getRisk(prepared: number, forecast: number, upper: number): Risk {
-  if (prepared > upper || prepared - forecast >= Math.max(10, forecast * 0.12)) return 'High'
-  if (prepared < forecast || prepared > forecast) return 'Medium'
+  // Waste risk should describe over-preparation, not a shortage.
+  // Shortages are tracked separately in the shortage-exposure KPI.
+  const excess = Math.max(0, prepared - forecast)
+  if (prepared > upper || excess >= Math.max(10, forecast * 0.12)) return 'High'
+  if (excess > 0) return 'Medium'
   return 'Low'
 }
 
