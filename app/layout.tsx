@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import './demand-forecast.css'
 import './premium-polish.css'
 import './culinary-intelligence.css'
 import './stitch-screen-adaptation.css'
