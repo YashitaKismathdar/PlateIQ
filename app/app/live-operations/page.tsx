@@ -41,7 +41,7 @@ export default function LiveOperationsPage() {
     <div className="page-body stitch-workspace-page stitch-page-live-operations">
       <div className="page-heading">
         <div>
-          <div className="eyebrow"><span className="live-dot" /> LIVE OPERATIONS <span className="separator">/</span> KITCHEN FLOOR</div>
+          <div className="eyebrow"><span className="live-dot" /> KITCHEN OPERATIONS <span className="separator">/</span> KITCHEN FLOOR</div>
           <h1>Kitchen command center</h1>
           <p>Track preparation batches, station capacity, and operational alerts in one place.</p>
         </div>
