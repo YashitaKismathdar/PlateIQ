@@ -25,6 +25,7 @@ app = FastAPI(
     description="ML-powered weekly meal demand forecasting",
     version="1.0.0",
 )
+app.include_router(analytics_router)
 
 app.add_middleware(
     CORSMiddleware,
