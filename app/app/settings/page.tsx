@@ -69,9 +69,9 @@ export default function SettingsPage() {
         <div className="settings-grid">
           <section className="panel settings-card">
             <h2>Restaurant</h2>
-            <p>{state.restaurant.name} · {state.restaurant.city}</p>
+            <p>{state.restaurant.name}{state.restaurant.city ? ` · ${state.restaurant.city}` : ""}</p>
             <h2>Service hours</h2>
-            <p>Lunch service · 11:00 AM – 3:00 PM</p>
+            <p>Service hours are not configured.</p>
             <h2>Currency</h2>
             <p>Indian Rupee (₹)</p>
           </section>
