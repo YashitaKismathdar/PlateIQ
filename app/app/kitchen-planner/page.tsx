@@ -11,12 +11,12 @@ type Task = { id: number; title: string; priority: 'Urgent' | 'High' | 'Normal';
 
 const categoryOptions: Array<'All Tasks' | Category> = ['All Tasks', 'Prep & Butchery', 'HACCP & Line Safety', 'Equipment & Sanitation', 'Manager Hand-off']
 const initialTasks: Task[] = [
-  { id: 1, title: 'Complete priority ingredient prep', priority: 'Urgent', station: 'Hot kitchen', detail: 'Finish priority prep and confirm quantities against the service forecast.', due: 'Due in 20 min', owner: 'Kitchen lead', category: 'Prep & Butchery', progress: 64, status: 'In Progress' },
-  { id: 2, title: 'Verify chilled ingredient labels', priority: 'High', station: 'Cold prep', detail: 'Check date labels, storage temperatures and shelf-life records before release.', due: 'Due in 35 min', owner: 'Prep team', category: 'HACCP & Line Safety', progress: 0, status: 'Pending' },
-  { id: 3, title: 'Record opening temperature checks', priority: 'High', station: 'Walk-in chiller', detail: 'Log opening temperatures and flag any reading outside the approved safe range.', due: 'Due in 15 min', owner: 'Shift supervisor', category: 'HACCP & Line Safety', progress: 50, status: 'In Progress' },
-  { id: 4, title: 'Sanitise and reset prep stations', priority: 'Normal', station: 'All stations', detail: 'Complete the cleaning checklist and confirm each station is ready for service.', due: 'Due in 50 min', owner: 'Station team', category: 'Equipment & Sanitation', progress: 0, status: 'Pending' },
-  { id: 5, title: 'Confirm hand-off notes for next shift', priority: 'Normal', station: 'Pass', detail: 'Share low-stock items, outstanding prep and service issues with the next lead.', due: 'Before shift end', owner: 'Shift supervisor', category: 'Manager Hand-off', progress: 100, status: 'Completed' },
-  { id: 6, title: 'Review low-stock substitutions', priority: 'High', station: 'Store room', detail: 'Confirm approved alternatives for ingredients that may not cover projected demand.', due: 'Due in 40 min', owner: 'Inventory lead', category: 'Prep & Butchery', progress: 0, status: 'Pending' },
+  { id: 1, title: 'Complete priority ingredient prep', priority: 'Urgent', station: 'Hot kitchen', detail: 'Finish priority prep and confirm quantities against the service forecast.', due: 'Not scheduled', owner: 'Kitchen lead', category: 'Prep & Butchery', progress: 64, status: 'In Progress' },
+  { id: 2, title: 'Verify chilled ingredient labels', priority: 'High', station: 'Cold prep', detail: 'Check date labels, storage temperatures and shelf-life records before release.', due: 'Not scheduled', owner: 'Prep team', category: 'HACCP & Line Safety', progress: 0, status: 'Pending' },
+  { id: 3, title: 'Record opening temperature checks', priority: 'High', station: 'Walk-in chiller', detail: 'Log opening temperatures and flag any reading outside the approved safe range.', due: 'Not scheduled', owner: 'Shift supervisor', category: 'HACCP & Line Safety', progress: 50, status: 'In Progress' },
+  { id: 4, title: 'Sanitise and reset prep stations', priority: 'Normal', station: 'All stations', detail: 'Complete the cleaning checklist and confirm each station is ready for service.', due: 'Not scheduled', owner: 'Station team', category: 'Equipment & Sanitation', progress: 0, status: 'Pending' },
+  { id: 5, title: 'Confirm hand-off notes for next shift', priority: 'Normal', station: 'Pass', detail: 'Share low-stock items, outstanding prep and service issues with the next lead.', due: 'Not scheduled', owner: 'Shift supervisor', category: 'Manager Hand-off', progress: 100, status: 'Completed' },
+  { id: 6, title: 'Review low-stock substitutions', priority: 'High', station: 'Store room', detail: 'Confirm approved alternatives for ingredients that may not cover projected demand.', due: 'Not scheduled', owner: 'Inventory lead', category: 'Prep & Butchery', progress: 0, status: 'Pending' },
 ]
 
 function Metric({ label, value, detail, icon: Icon }: { label: string; value: string; detail: string; icon: typeof ClipboardCheck }) {
@@ -95,7 +95,7 @@ export default function KitchenPlannerPage() {
 
   return <AppShell>
     <div className="page-body stitch-workspace-page stitch-page-tasks">
-      <div className="stitch-page-intro"><div><div className="stitch-page-kicker"><span className="stitch-live-dot" /> PLATEIQ INTELLIGENCE <span className="separator">/</span> OPERATIONS</div><h1>Tasks &amp; Checklists</h1><p>Coordinate kitchen prep, food safety checks and shift hand-offs in one workspace.</p></div></div>
+      <div className="stitch-page-intro"><div><div className="stitch-page-kicker">PLATEIQ INTELLIGENCE <span className="separator">/</span> OPERATIONS</div><h1>Tasks &amp; Checklists</h1><p>Coordinate kitchen prep, food safety checks and shift hand-offs in one workspace.</p></div></div>
 
       <section className="panel tasks-hero"><div><div className="section-kicker"><ClipboardCheck size={15} /> SHIFT EXECUTION</div><h2>Make every service task visible and accountable.</h2><p className="muted-copy">Track priority, ownership and progress. Changes are saved in this browser.</p></div><button className="tasks-primary-button" onClick={() => setNewTaskOpen(value => !value)}>{newTaskOpen ? <X size={16} /> : <Plus size={16} />}{newTaskOpen ? 'Cancel' : 'New task'}</button></section>
 
