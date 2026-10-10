@@ -141,7 +141,7 @@ function advanceBatch(state: PlateIQState, batchId: string, requestedStatus?: Ba
 
 export function reducer(state: PlateIQState, action: PlateIQAction): PlateIQState {
   switch (action.type) {
-    case 'hydrate': return isValidPersistedState(action.state) ? syncState(action.state) : initialState
+    case 'hydrate': return isValidPersistedState(action.state) ? syncState({ ...action.state, restaurant: initialState.restaurant }) : initialState
     case 'reset-scenario': return { ...state, scenario, demo: { ...state.demo, scenario }, events: [createEvent(state, 'SCENARIO_RESET', 'Scenario reset', 'What-If inputs returned to the base scenario.', '/app/what-if'), ...state.events] }
     case 'reset-data': return initialState
     case 'reason': return { ...state, demo: { ...state.demo, showReason: action.value } }
