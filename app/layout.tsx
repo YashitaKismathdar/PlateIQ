@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import './demand-forecast.css'
 import './premium-polish.css'
 import './culinary-intelligence.css'
 import './stitch-screen-adaptation.css'
@@ -28,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body className="antialiased">
         <PlateIQProvider>{children}</PlateIQProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}

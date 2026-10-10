@@ -1,5 +1,5 @@
 import type { Alert, Dish, InventoryItem, KitchenStation, Restaurant, SimulationScenario, WasteRecord } from './types'
-export const restaurant:Restaurant={id:'jubilee-hills',name:'Jubilee Hills Restaurant',city:'Hyderabad',country:'India',timezone:'Asia/Kolkata',currency:'₹'}
+export const restaurant:Restaurant={id:'plateiq-kitchen',name:'Your Restaurant',city:'',country:'India',timezone:'Asia/Kolkata',currency:'₹'}
 export const dishes:Dish[]=[
 {id:'biryani',name:'Chicken Biryani',category:'Mains',forecast:126,lowerBound:118,upperBound:126,confidence:91,actualOrders:92,prepared:60,initialBatch:60,nextBatch:30,batchSize:30,leadTimeMinutes:18,status:'Batch Recommended',ingredients:{chicken:8,rice:5,yogurt:2,onions:2.5}},
 {id:'paneer',name:'Paneer Curry',category:'Mains',forecast:82,lowerBound:76,upperBound:88,confidence:94,actualOrders:65,prepared:70,initialBatch:70,nextBatch:20,batchSize:20,leadTimeMinutes:15,status:'On Track',ingredients:{paneer:5,tomatoes:3,onions:1.5}},
@@ -38,8 +38,8 @@ export const stations:KitchenStation[]=[{id:'hot',name:'Hot kitchen',capacity:86
 export const scenario:SimulationScenario={customerChange:0,weather:'Clear',holiday:'None',localEvent:'None',promotion:false}
 export const alerts:Alert[]=[{id:'surge',title:'Demand surge detected',description:'Chicken Biryani demand is accelerating beyond the initial plan.',severity:'warning',dismissed:false,relatedEntity:'biryani'},{id:'spices',title:'Critical stock risk',description:'Whole spices are projected to reach critical stock in 0.8 days.',severity:'critical',dismissed:false,relatedEntity:'spices'}]
 export const waste:WasteRecord[]=[
-{id:'waste-biryani',dishId:'biryani',prepared:60,consumed:92,spoilageKg:1.2,overproductionKg:7.2,wasteKg:8.4,wasteCost:1260,unit:'kg',category:'Overproduction',cause:'Initial preparation exceeded lunch demand.',date:'2025-06-24T12:20:00+05:30'},
-{id:'waste-paneer',dishId:'paneer',prepared:70,consumed:65,spoilageKg:.8,overproductionKg:4.3,wasteKg:5.1,wasteCost:765,unit:'kg',category:'Overproduction',cause:'Batch size exceeded late-service demand.',date:'2025-06-24T12:10:00+05:30'},
-{id:'waste-rice',dishId:'rice',prepared:120,consumed:112,spoilageKg:.7,overproductionKg:4,wasteKg:4.7,wasteCost:470,unit:'kg',category:'Prepared Food',cause:'Prepared side dish remaining after service.',date:'2025-06-24T12:00:00+05:30'},
-{id:'waste-dal',dishId:'dal',prepared:62,consumed:58,spoilageKg:.4,overproductionKg:2.4,wasteKg:2.8,wasteCost:350,unit:'kg',category:'Spoilage',cause:'Short holding-time window.',date:'2025-06-24T11:50:00+05:30'},
-{id:'waste-naan',dishId:'naan',prepared:150,consumed:141,spoilageKg:.5,overproductionKg:3.1,wasteKg:3.6,wasteCost:288,unit:'kg',category:'Prepared Food',cause:'Unsold bread at service close.',date:'2025-06-24T11:40:00+05:30'}]
+{id:'waste-biryani',dishId:'biryani',prepared:60,consumed:92,spoilageKg:1.2,overproductionKg:7.2,wasteKg:8.4,wasteCost:1260,unit:'kg',category:'Overproduction',cause:'Initial preparation exceeded lunch demand.',date:new Date().toISOString()},
+{id:'waste-paneer',dishId:'paneer',prepared:70,consumed:65,spoilageKg:.8,overproductionKg:4.3,wasteKg:5.1,wasteCost:765,unit:'kg',category:'Overproduction',cause:'Batch size exceeded late-service demand.',date:new Date().toISOString()},
+{id:'waste-rice',dishId:'rice',prepared:120,consumed:112,spoilageKg:.7,overproductionKg:4,wasteKg:4.7,wasteCost:470,unit:'kg',category:'Prepared Food',cause:'Prepared side dish remaining after service.',date:new Date().toISOString()},
+{id:'waste-dal',dishId:'dal',prepared:62,consumed:58,spoilageKg:.4,overproductionKg:2.4,wasteKg:2.8,wasteCost:350,unit:'kg',category:'Spoilage',cause:'Short holding-time window.',date:new Date().toISOString()},
+{id:'waste-naan',dishId:'naan',prepared:150,consumed:141,spoilageKg:.5,overproductionKg:3.1,wasteKg:3.6,wasteCost:288,unit:'kg',category:'Prepared Food',cause:'Unsold bread at service close.',date:new Date().toISOString()}]

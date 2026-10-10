@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+import { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import type React from 'react'
 import type { BatchStatus, OperationalEvent, PlateIQAction, PlateIQState, Severity } from '@/lib/types'
 import { restaurant, dishes, inventory, stations, alerts, scenario, waste } from '@/lib/mock-data'
@@ -8,7 +8,7 @@ import { adjustStock, consumeForBatch, deriveInventoryState, markOrdered, receiv
 import { getForecastMetrics, getRestaurantMetrics, isValidPersistedState, simulateScenario } from '@/lib/selectors'
 import { wasteSummary } from '@/lib/waste-engine'
 
-const now = '2025-06-24T12:45:00+05:30'
+const now = new Date().toISOString()
 const initialBiryani = dishes.find(dish => dish.id === 'biryani')
 const initialOrders = initialBiryani?.actualOrders ?? 0
 const initialOrdersPerMinute = Number((initialOrders / 6).toFixed(1))
@@ -57,7 +57,7 @@ export const initialState: PlateIQState = {
   recommendations: [{ id: 'rec-1', title: `Start preparation batch #2 +${initialBatches[0].quantity}`, description: 'Biryani is tracking above the initial preparation plan.', actionLabel: 'Start Batch #2', confidence: initialForecast.confidence, dishId: 'biryani' }],
   events: [],
   scenario,
-  demo: { running: false, step: 0, speed: 1, orders: initialDemoMetrics.orders, ordersPerMinute: initialDemoMetrics.ordersPerMinute, baselineVelocity: 8, projectedDemand: initialForecast.projectedDemand, prepared: initialPrepared, kitchenCapacity: initialDemoMetrics.kitchenCapacity, forecast: initialForecast.forecast, lowerBound: initialForecast.lowerBound, upperBound: initialForecast.upperBound, confidence: initialForecast.confidence, status: initialDemoMetrics.status, batch: initialBatches[0], showReason: false, dismissedAlertIds: [], scenario, simulatedTime: '2025-06-24T11:00:00+05:30' },
+  demo: { running: false, step: 0, speed: 1, orders: initialDemoMetrics.orders, ordersPerMinute: initialDemoMetrics.ordersPerMinute, baselineVelocity: 8, projectedDemand: initialForecast.projectedDemand, prepared: initialPrepared, kitchenCapacity: initialDemoMetrics.kitchenCapacity, forecast: initialForecast.forecast, lowerBound: initialForecast.lowerBound, upperBound: initialForecast.upperBound, confidence: initialForecast.confidence, status: initialDemoMetrics.status, batch: initialBatches[0], showReason: false, dismissedAlertIds: [], scenario, simulatedTime: new Date().toISOString() },
   metrics: { demand: initialForecasts.reduce((sum, forecast) => sum + forecast.forecast, 0), prepared: initialPrepared, wasteKg: initialWaste.wasteKg, wasteCost: initialWaste.wasteCost, forecastAccuracy: initialForecasts.reduce((sum, forecast) => sum + forecast.confidence, 0) / initialForecasts.length, savings: initialWaste.potentialSavings ?? 0 },
 }
 
@@ -141,7 +141,7 @@ function advanceBatch(state: PlateIQState, batchId: string, requestedStatus?: Ba
 
 export function reducer(state: PlateIQState, action: PlateIQAction): PlateIQState {
   switch (action.type) {
-    case 'hydrate': return isValidPersistedState(action.state) ? syncState(action.state) : initialState
+    case 'hydrate': return isValidPersistedState(action.state) ? syncState({ ...action.state, restaurant: initialState.restaurant }) : initialState
     case 'reset-scenario': return { ...state, scenario, demo: { ...state.demo, scenario }, events: [createEvent(state, 'SCENARIO_RESET', 'Scenario reset', 'What-If inputs returned to the base scenario.', '/app/what-if'), ...state.events] }
     case 'reset-data': return initialState
     case 'reason': return { ...state, demo: { ...state.demo, showReason: action.value } }
@@ -173,26 +173,26 @@ export function reducer(state: PlateIQState, action: PlateIQAction): PlateIQStat
       const item = state.inventory.find(candidate => candidate.id === action.itemId)
       if (!item || item.orderStatus !== 'Ordered' || action.amount <= 0) return state
       const updated = receiveStock(item, action.amount)
-      return { ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_RECEIVED', `${item.name} delivery received`, `${action.amount} ${item.unit} was added to inventory.`, '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Delivery received', `${item.name} stock is now ${updated.currentStock} ${item.unit}.`, '/app/inventory'), ...state.notifications] }
+      return syncState({ ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_RECEIVED', `${item.name} delivery received`, `${action.amount} ${item.unit} was added to inventory.`, '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Delivery received', `${item.name} stock is now ${updated.currentStock} ${item.unit}.`, '/app/inventory'), ...state.notifications] })
     }
     case 'adjust-stock': {
       const item = state.inventory.find(candidate => candidate.id === action.itemId)
       const updated = item ? adjustStock(item, action.amount) : null
       if (!item || !updated) return { ...state, events: [createEvent(state, 'INVENTORY_ADJUSTMENT_FAILED', 'Inventory adjustment blocked', `${item?.name ?? 'Ingredient'} cannot be adjusted below zero.`, '/app/inventory', 'warning'), ...state.events] }
-      return { ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ADJUSTED', `${item.name} inventory adjusted`, 'Inventory quantity was updated safely.', '/app/inventory'), ...state.events] }
+      return syncState({ ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ADJUSTED', `${item.name} inventory adjusted`, 'Inventory quantity was updated safely.', '/app/inventory'), ...state.events] })
     }
     case 'mark-ordered': {
       const item = state.inventory.find(candidate => candidate.id === action.itemId)
       if (!item || item.orderStatus === 'Ordered') return state
       const updated = markOrdered(item)
-      return { ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ORDERED', `${item.name} ordered`, 'A replenishment order was placed without changing stock.', '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Reorder placed', `${item.name} is now marked Ordered.`, '/app/inventory'), ...state.notifications] }
+      return syncState({ ...state, inventory: state.inventory.map(candidate => candidate.id === item.id ? updated : candidate), events: [createEvent(state, 'INVENTORY_ORDERED', `${item.name} ordered`, 'A replenishment order was placed without changing stock.', '/app/inventory'), ...state.events], notifications: [createNotification(state, 'Reorder placed', `${item.name} is now marked Ordered.`, '/app/inventory'), ...state.notifications] })
     }
     case 'record-waste': {
       const dish = state.dishes.find(candidate => candidate.id === action.dishId)
       if (!dish || action.wasteKg <= 0) return state
       const record = { id: `waste-${state.waste.length + 1}`, dishId: dish.id, prepared: dish.prepared, consumed: dish.actualOrders, spoilageKg: action.category === 'Spoilage' ? action.wasteKg : 0, overproductionKg: action.category === 'Overproduction' ? action.wasteKg / 0.045 : 0, wasteKg: Number(action.wasteKg.toFixed(1)), wasteCost: Math.round(action.wasteKg * 150), unit: 'kg' as const, category: action.category, cause: action.cause, date: new Date().toISOString() }
       const summary = wasteSummary([record, ...state.waste])
-      return { ...state, waste: [record, ...state.waste], metrics: { ...state.metrics, wasteKg: summary.wasteKg, wasteCost: summary.wasteCost, savings: summary.potentialSavings ?? 0 }, events: [createEvent(state, 'WASTE_RECORDED', `${dish.name} waste recorded`, `${record.wasteKg.toFixed(1)} kg recorded as ${record.category}.`, '/app/waste-intelligence'), ...state.events], notifications: [createNotification(state, 'Waste recorded', `${dish.name}: ${record.wasteKg.toFixed(1)} kg.`, '/app/waste-intelligence'), ...state.notifications] }
+      return syncState({ ...state, waste: [record, ...state.waste], metrics: { ...state.metrics, wasteKg: summary.wasteKg, wasteCost: summary.wasteCost, savings: summary.potentialSavings ?? 0 }, events: [createEvent(state, 'WASTE_RECORDED', `${dish.name} waste recorded`, `${record.wasteKg.toFixed(1)} kg recorded as ${record.category}.`, '/app/waste-intelligence'), ...state.events], notifications: [createNotification(state, 'Waste recorded', `${dish.name}: ${record.wasteKg.toFixed(1)} kg.`, '/app/waste-intelligence'), ...state.notifications] })
     }
     case 'batch': return advanceBatch(state, action.batchId ?? state.demo.batch.id)
     case 'batch-status': return advanceBatch(state, action.batchId, action.status)
@@ -204,20 +204,29 @@ const Ctx = createContext<{ state: PlateIQState; dispatch: React.Dispatch<PlateI
 
 export function PlateIQProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState)
+  const [hydrated, setHydrated] = useState(false)
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('plateiq-state')
-      if (!saved) return
-      const parsed: unknown = JSON.parse(saved)
-      if (isValidPersistedState(parsed)) dispatch({ type: 'hydrate', state: parsed })
-      else localStorage.removeItem('plateiq-state')
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved)
+        if (isValidPersistedState(parsed)) dispatch({ type: 'hydrate', state: parsed })
+        else localStorage.removeItem('plateiq-state')
+      }
     } catch {
       localStorage.removeItem('plateiq-state')
+    } finally {
+      setHydrated(true)
     }
   }, [])
+
   useEffect(() => {
+    // Do not overwrite saved data with initialState before hydration finishes.
+    if (!hydrated) return
     try { localStorage.setItem('plateiq-state', JSON.stringify(state)) } catch {}
-  }, [state])
+  }, [state, hydrated])
+
   return <Ctx.Provider value={{ state, dispatch }}>{children}</Ctx.Provider>
 }
 
@@ -227,7 +236,7 @@ export function usePlateIQ() {
   return value
 }
 
-export const navItems = [['Overview', '/app'], ['Live Operations', '/app/live-operations'], ['Tasks', '/app/kitchen-planner'], ['Forecasting', '/app/demand-forecast'], ['Inventory', '/app/inventory'], ['Waste Management', '/app/waste-intelligence'], ['External Factors', '/app/what-if'], ['AI Copilot', '/app/copilot'], ['Insights', '/app/analytics'], ['Settings', '/app/settings']] as const
+export const navItems = [['Overview', '/app'], ['Kitchen Operations', '/app/live-operations'], ['Tasks', '/app/kitchen-planner'], ['Forecasting', '/app/demand-forecast'], ['Inventory', '/app/inventory'], ['Waste Management', '/app/waste-intelligence'], ['External Factors', '/app/what-if'], ['AI Copilot', '/app/copilot'], ['Insights', '/app/analytics'], ['Settings', '/app/settings']] as const
 
 export function usePlateIQMetrics() {
   const { state } = usePlateIQ()
